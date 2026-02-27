@@ -1,113 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Колесо Фортуны</title>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Raffle Wheel</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #1a1a2e; color: white; margin: 0; padding: 20px; overflow: hidden; }
-        #wheel-container { position: relative; width: 350px; height: 350px; margin: 20px auto; }
-        canvas { width: 100%; height: 100%; border-radius: 50%; border: 5px solid #16213e; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        #pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #e94560; z-index: 10; }
-        button { margin-top: 30px; padding: 15px 40px; font-size: 18px; font-weight: bold; background: #e94560; color: white; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4); }
-        button:hover { background: #ff4d6d; transform: scale(1.05); }
-        button:disabled { background: #555; cursor: not-allowed; }
+        body { 
+            background: radial-gradient(circle, #1b2735 0%, #090a0f 100%);
+            color: white; font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh; margin: 0; overflow: hidden;
+        }
+        h2 { text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        
+        #wrapper { position: relative; width: 380px; height: 380px; filter: drop-shadow(0 0 20px rgba(0,0,0,0.8)); }
+        canvas { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #2c3e50; }
+        
+        /* Стрелка сверху */
+        #arrow { 
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; 
+            border-left: 20px solid transparent; border-right: 20px solid transparent; 
+            border-top: 35px solid #f1c40f; z-index: 10; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+        }
+
+        button { 
+            margin-top: 40px; padding: 18px 50px; font-size: 20px; font-weight: bold;
+            cursor: pointer; background: linear-gradient(45deg, #f1c40f, #f39c12);
+            color: #1a1a2e; border: none; border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(241, 196, 15, 0.3); transition: 0.3s;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(241, 196, 15, 0.4); }
+        button:active { transform: translateY(1px); }
+
+        /* Всплывающее окно победителя */
+        #overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); flex-direction: column; align-items: center;
+            justify-content: center; z-index: 100; backdrop-filter: blur(5px);
+        }
+        #result-box {
+            background: #1a1a2e; padding: 40px; border-radius: 20px; border: 2px solid #f1c40f;
+            text-align: center; box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
+            animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <h2>🎡 Розыгрыш</h2>
-    
-    <div id="wheel-container">
-        <div id="pointer"></div>
-        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    <h2>Gold Giveaway</h2>
+
+    <div id="wrapper">
+        <div id="arrow"></div>
+        <canvas id="wheel" width="600" height="600"></canvas>
     </div>
 
-    <button id="spinBtn">КРУТИТЬ!</button>
+    <button onclick="spin()">ЗАПУСТИТЬ</button>
+
+    <div id="overlay">
+        <div id="result-box">
+            <h3 style="color: #bdc3c7;">ПОБЕДИТЕЛЬ:</h3>
+            <h1 id="winner-name" style="font-size: 48px; margin: 20px 0; color: #f1c40f;">ИМЯ</h1>
+            <button onclick="closeOverlay()" style="margin-top: 10px;">ЗАКРЫТЬ</button>
+        </div>
+    </div>
 
     <script>
-        const canvas = document.getElementById('wheelCanvas');
+        const canvas = document.getElementById('wheel');
         const ctx = canvas.getContext('2d');
-        const btn = document.getElementById('spinBtn');
-
-        const names = ['Мария', 'Алексей', 'Елена', 'Дмитрий', 'Оксана', 'Иван', 'Анна', 'Сергей'];
-        const colors = ['#e94560', '#0f3460', '#16213e', '#533483', '#00909e', '#27ae60', '#f39c12', '#8e44ad'];
+        const winnerDisplay = document.getElementById('winner-name');
+        const overlay = document.getElementById('overlay');
         
+        const params = new URLSearchParams(window.location.search);
+        const namesStr = params.get('names');
+        const names = namesStr ? namesStr.split(',') : ['Мария', 'Иван', 'Анна', 'Олег', 'Елена', 'Дмитрий', 'Светлана', 'Игорь'];
+        
+        // Цветовая палитра: чередование темных и золотых оттенков
+        const colors = ['#2c3e50', '#f39c12', '#34495e', '#f1c40f', '#1a252f', '#e67e22'];
         let currentRotation = 0;
         let isSpinning = false;
 
-        function drawWheel() {
-            const sliceAngle = (2 * Math.PI) / names.length;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function draw() {
+            const slice = (Math.PI * 2) / names.length;
+            ctx.clearRect(0, 0, 600, 600);
 
-            names.forEach((name, i) => {
-                const angle = currentRotation + i * sliceAngle;
+            names.forEach((_, i) => {
+                const angle = currentRotation + i * slice;
                 
                 // Рисуем сектор
                 ctx.beginPath();
                 ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(250, 250);
-                ctx.arc(250, 250, 250, angle, angle + sliceAngle);
+                ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 280, angle, angle + slice);
                 ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Рисуем текст
+                // Вместо имен пишем номера
                 ctx.save();
-                ctx.translate(250, 250);
-                ctx.rotate(angle + sliceAngle / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "white";
-                ctx.font = "bold 20px Arial";
-                ctx.fillText(name, 230, 10);
+                ctx.translate(300, 300);
+                ctx.rotate(angle + slice / 2);
+                ctx.fillStyle = (colors[i % colors.length] === '#f1c40f' || colors[i % colors.length] === '#f39c12') ? 'black' : 'white';
+                ctx.font = "bold 22px sans-serif";
+                ctx.fillText(i + 1, 200, 10);
                 ctx.restore();
             });
+
+            // Центральный круг
+            ctx.beginPath();
+            ctx.arc(300, 300, 40, 0, Math.PI * 2);
+            ctx.fillStyle = '#f1c40f';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
         }
 
         function spin() {
             if (isSpinning) return;
             isSpinning = true;
-            btn.disabled = true;
-
-            const extraSpins = Math.random() * 5 + 5; // От 5 до 10 полных оборотов
-            const totalRotation = extraSpins * 2 * Math.PI;
-            const startRotation = currentRotation;
-            const startTime = performance.now();
-            const duration = 4000; // 4 секунды
-
+            
+            let duration = 5000; // 5 секунд вращения
+            let start = performance.now();
+            let totalRotation = Math.random() * 40 + 40; // Минимум 40 радиан
+            
             function animate(now) {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / duration, 1);
+                let time = now - start;
+                let progress = Math.min(time / duration, 1);
                 
-                // Функция замедления (Ease Out)
-                const easeOut = 1 - Math.pow(1 - progress, 3);
+                // Функция замедления Cubic Out
+                let ease = 1 - Math.pow(1 - progress, 4);
                 
-                currentRotation = startRotation + totalRotation * easeOut;
-                drawWheel();
+                let rotation = totalRotation * ease;
+                currentRotation = rotation;
+                draw();
 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
                     isSpinning = false;
-                    btn.disabled = false;
-                    determineWinner();
+                    showWinner(totalRotation);
                 }
             }
             requestAnimationFrame(animate);
         }
 
-        function determineWinner() {
-            const sliceAngle = (2 * Math.PI) / names.length;
-            // Указатель сверху (на 1.5 * PI радианах)
-            const normalizedRotation = (currentRotation + (1.5 * Math.PI)) % (2 * Math.PI);
-            const index = names.length - 1 - Math.floor(normalizedRotation / sliceAngle) % names.length;
+        function showWinner(finalRotation) {
+            const slice = (Math.PI * 2) / names.length;
+            // Корректировка на стрелку сверху (1.5 * PI)
+            const winningIndex = Math.floor(( (2 * Math.PI - (finalRotation % (2 * Math.PI))) + (1.5 * Math.PI) ) / slice) % names.length;
             
-            // Небольшая магия, чтобы всегда попадать точно в имя
-            const winner = names[index === names.length ? 0 : index];
-            setTimeout(() => alert("🎉 Победитель: " + winner), 200);
+            winnerDisplay.innerText = names[winningIndex];
+            setTimeout(() => {
+                overlay.style.display = 'flex';
+            }, 300);
         }
 
-        btn.addEventListener('click', spin);
-        drawWheel(); // Начальная отрисовка
+        function closeOverlay() {
+            overlay.style.display = 'none';
+        }
+
+        draw();
     </script>
 </body>
 </html>
