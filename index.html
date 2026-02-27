@@ -3,161 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Raffle Wheel</title>
+    <title>Premium Raffle</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         body { 
-            background: radial-gradient(circle, #1b2735 0%, #090a0f 100%);
-            color: white; font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #0f0c29; 
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            color: white; font-family: 'Segoe UI', sans-serif;
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; margin: 0; overflow: hidden;
+            justify-content: center; height: 100vh; margin: 0;
         }
-        h2 { text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        h2 { text-transform: uppercase; letter-spacing: 5px; color: #f1c40f; margin-bottom: 20px; }
         
-        #wrapper { position: relative; width: 380px; height: 380px; filter: drop-shadow(0 0 20px rgba(0,0,0,0.8)); }
-        canvas { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #2c3e50; }
+        #wrapper { position: relative; width: 360px; height: 360px; }
+        canvas { width: 100%; height: 100%; border-radius: 50%; border: 10px solid #1a1a2e; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
         
-        /* Стрелка сверху */
         #arrow { 
-            position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; 
-            border-left: 20px solid transparent; border-right: 20px solid transparent; 
-            border-top: 35px solid #f1c40f; z-index: 10; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%); 
+            width: 40px; height: 40px; background: #f1c40f; 
+            clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 10;
         }
 
         button { 
-            margin-top: 40px; padding: 18px 50px; font-size: 20px; font-weight: bold;
-            cursor: pointer; background: linear-gradient(45deg, #f1c40f, #f39c12);
-            color: #1a1a2e; border: none; border-radius: 50px;
-            box-shadow: 0 10px 20px rgba(241, 196, 15, 0.3); transition: 0.3s;
+            margin-top: 50px; padding: 15px 60px; font-size: 22px; font-weight: bold;
+            cursor: pointer; background: #f1c40f; color: #0f0c29;
+            border: none; border-radius: 50px; transition: 0.2s;
+            box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
         }
-        button:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(241, 196, 15, 0.4); }
-        button:active { transform: translateY(1px); }
+        button:hover { transform: scale(1.05); background: #fff; }
+        button:disabled { background: #555; cursor: not-allowed; }
 
-        /* Всплывающее окно победителя */
         #overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); flex-direction: column; align-items: center;
-            justify-content: center; z-index: 100; backdrop-filter: blur(5px);
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
-        #result-box {
-            background: #1a1a2e; padding: 40px; border-radius: 20px; border: 2px solid #f1c40f;
-            text-align: center; box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
-            animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        #result-box { text-align: center; animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes zoomIn { from { transform: scale(0); } to { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <h2>Gold Giveaway</h2>
+    <h2>LUXE DRAW</h2>
 
     <div id="wrapper">
         <div id="arrow"></div>
         <canvas id="wheel" width="600" height="600"></canvas>
     </div>
 
-    <button onclick="spin()">ЗАПУСТИТЬ</button>
+    <button id="spinBtn" onclick="spin()">START</button>
 
     <div id="overlay">
         <div id="result-box">
-            <h3 style="color: #bdc3c7;">ПОБЕДИТЕЛЬ:</h3>
-            <h1 id="winner-name" style="font-size: 48px; margin: 20px 0; color: #f1c40f;">ИМЯ</h1>
-            <button onclick="closeOverlay()" style="margin-top: 10px;">ЗАКРЫТЬ</button>
+            <h3 style="color: #aaa;">WINNER</h3>
+            <h1 id="winner-name" style="font-size: 60px; color: #f1c40f; margin: 10px 0;">...</h1>
+            <button onclick="closeOverlay()">OK</button>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('wheel');
         const ctx = canvas.getContext('2d');
-        const winnerDisplay = document.getElementById('winner-name');
-        const overlay = document.getElementById('overlay');
-        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
         const params = new URLSearchParams(window.location.search);
-        const namesStr = params.get('names');
-        const names = namesStr ? namesStr.split(',') : ['Мария', 'Иван', 'Анна', 'Олег', 'Елена', 'Дмитрий', 'Светлана', 'Игорь'];
+        const names = (params.get('names') || "Мария,Иван,Анна,Олег,Елена,Дмитрий,Светлана,Игорь").split(',');
         
-        // Цветовая палитра: чередование темных и золотых оттенков
-        const colors = ['#2c3e50', '#f39c12', '#34495e', '#f1c40f', '#1a252f', '#e67e22'];
+        const colors = ['#1a1a2e', '#f1c40f', '#16213e', '#e67e22', '#0f3460', '#f39c12'];
         let currentRotation = 0;
         let isSpinning = false;
+
+        function playTick() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
 
         function draw() {
             const slice = (Math.PI * 2) / names.length;
             ctx.clearRect(0, 0, 600, 600);
-
             names.forEach((_, i) => {
                 const angle = currentRotation + i * slice;
-                
-                // Рисуем сектор
                 ctx.beginPath();
                 ctx.fillStyle = colors[i % colors.length];
                 ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 280, angle, angle + slice);
+                ctx.arc(300, 300, 290, angle, angle + slice);
                 ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-                ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Вместо имен пишем номера
                 ctx.save();
                 ctx.translate(300, 300);
                 ctx.rotate(angle + slice / 2);
-                ctx.fillStyle = (colors[i % colors.length] === '#f1c40f' || colors[i % colors.length] === '#f39c12') ? 'black' : 'white';
-                ctx.font = "bold 22px sans-serif";
-                ctx.fillText(i + 1, 200, 10);
+                ctx.fillStyle = (colors[i % colors.length].startsWith('#f')) ? 'black' : 'white';
+                ctx.font = "bold 24px sans-serif";
+                ctx.fillText(i + 1, 220, 10);
                 ctx.restore();
             });
-
-            // Центральный круг
-            ctx.beginPath();
-            ctx.arc(300, 300, 40, 0, Math.PI * 2);
-            ctx.fillStyle = '#f1c40f';
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
         }
 
         function spin() {
             if (isSpinning) return;
             isSpinning = true;
-            
-            let duration = 5000; // 5 секунд вращения
+            document.getElementById('spinBtn').disabled = true;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            let duration = 6000;
             let start = performance.now();
-            let totalRotation = Math.random() * 40 + 40; // Минимум 40 радиан
-            
+            let totalRotation = Math.random() * 50 + 50;
+            let lastTickAngle = 0;
+            const slice = (Math.PI * 2) / names.length;
+
             function animate(now) {
                 let time = now - start;
                 let progress = Math.min(time / duration, 1);
-                
-                // Функция замедления Cubic Out
                 let ease = 1 - Math.pow(1 - progress, 4);
-                
-                let rotation = totalRotation * ease;
-                currentRotation = rotation;
-                draw();
+                currentRotation = totalRotation * ease;
 
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    isSpinning = false;
-                    showWinner(totalRotation);
+                // Звук щелчка при прохождении сектора
+                if (Math.floor(currentRotation / slice) > lastTickAngle) {
+                    playTick();
+                    lastTickAngle = Math.floor(currentRotation / slice);
                 }
+
+                draw();
+                if (progress < 1) requestAnimationFrame(animate);
+                else finishSpin();
             }
             requestAnimationFrame(animate);
         }
 
-        function showWinner(finalRotation) {
+        function finishSpin() {
             const slice = (Math.PI * 2) / names.length;
-            // Корректировка на стрелку сверху (1.5 * PI)
-            const winningIndex = Math.floor(( (2 * Math.PI - (finalRotation % (2 * Math.PI))) + (1.5 * Math.PI) ) / slice) % names.length;
+            const winningIndex = Math.floor(( (2 * Math.PI - (currentRotation % (2 * Math.PI))) + (1.5 * Math.PI) ) / slice) % names.length;
             
-            winnerDisplay.innerText = names[winningIndex];
-            setTimeout(() => {
-                overlay.style.display = 'flex';
-            }, 300);
+            document.getElementById('winner-name').innerText = names[winningIndex];
+            document.getElementById('overlay').style.display = 'flex';
+            
+            // Запуск конфетти
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#f1c40f', '#ffffff'] });
         }
 
         function closeOverlay() {
-            overlay.style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('spinBtn').disabled = false;
         }
 
         draw();
