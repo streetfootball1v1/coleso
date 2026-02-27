@@ -3,158 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium Raffle</title>
+    <title>Digital Lotto Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         body { 
-            background: #0f0c29; 
-            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
-            color: white; font-family: 'Segoe UI', sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; margin: 0;
+            background: #121212; color: white; font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden;
         }
-        h2 { text-transform: uppercase; letter-spacing: 5px; color: #f1c40f; margin-bottom: 20px; }
         
-        #wrapper { position: relative; width: 360px; height: 360px; }
-        canvas { width: 100%; height: 100%; border-radius: 50%; border: 10px solid #1a1a2e; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        
-        #arrow { 
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%); 
-            width: 40px; height: 40px; background: #f1c40f; 
-            clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 10;
+        #jar-container {
+            position: relative; width: 320px; height: 400px;
+            border: 6px solid rgba(255,255,255,0.2);
+            border-bottom-left-radius: 40px; border-bottom-right-radius: 40px;
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.1);
+            overflow: hidden;
         }
 
-        button { 
-            margin-top: 50px; padding: 15px 60px; font-size: 22px; font-weight: bold;
-            cursor: pointer; background: #f1c40f; color: #0f0c29;
-            border: none; border-radius: 50px; transition: 0.2s;
-            box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
+        .paper {
+            position: absolute; width: 60px; height: 30px;
+            background: #f1c40f; color: transparent;
+            border-radius: 4px; border: 1px solid #d4ac0d;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
         }
-        button:hover { transform: scale(1.05); background: #fff; }
-        button:disabled { background: #555; cursor: not-allowed; }
+
+        button {
+            margin-top: 40px; padding: 15px 50px; font-size: 20px; font-weight: bold;
+            cursor: pointer; background: #27ae60; color: white;
+            border: none; border-radius: 10px; transition: 0.3s;
+        }
+        button:hover { background: #2ecc71; transform: scale(1.05); }
 
         #overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
             flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
-        #result-box { text-align: center; animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes zoomIn { from { transform: scale(0); } to { transform: scale(1); } }
+        
+        #winner-paper {
+            width: 280px; height: 140px; background: white; color: #333;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold; border-radius: 5px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.5);
+            transform: rotate(-2deg);
+            animation: unfold 0.6s ease-out;
+        }
+
+        @keyframes unfold {
+            from { transform: scale(0) rotate(20deg); opacity: 0; }
+            to { transform: scale(1) rotate(-2deg); opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
-    <h2>LUXE DRAW</h2>
+    <h2 id="title">ЛОТОТРОН</h2>
 
-    <div id="wrapper">
-        <div id="arrow"></div>
-        <canvas id="wheel" width="600" height="600"></canvas>
-    </div>
-
-    <button id="spinBtn" onclick="spin()">START</button>
-
-    <div id="overlay">
-        <div id="result-box">
-            <h3 style="color: #aaa;">WINNER</h3>
-            <h1 id="winner-name" style="font-size: 60px; color: #f1c40f; margin: 10px 0;">...</h1>
-            <button onclick="closeOverlay()">OK</button>
+    <div id="jar-container">
         </div>
+
+    <button id="drawBtn" onclick="startDraw()">ДОСТАТЬ ИМЯ</button>
+
+    <div id="overlay" onclick="closeOverlay()">
+        <p style="color: #aaa;">ВЫТЯНУТЫЙ ЛИСТОЧЕК:</p>
+        <div id="winner-paper">ИМЯ</div>
+        <p style="margin-top: 30px; font-size: 14px;">(нажми, чтобы закрыть)</p>
     </div>
 
     <script>
-        const canvas = document.getElementById('wheel');
-        const ctx = canvas.getContext('2d');
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+        const container = document.getElementById('jar-container');
         const params = new URLSearchParams(window.location.search);
-        const names = (params.get('names') || "Мария,Иван,Анна,Олег,Елена,Дмитрий,Светлана,Игорь").split(',');
+        const names = (params.get('names') || "Анна,Иван,Мария,Олег,Елена,Дмитрий,Светлана,Игорь,Артем,Ольга").split(',');
         
-        const colors = ['#1a1a2e', '#f1c40f', '#16213e', '#e67e22', '#0f3460', '#f39c12'];
-        let currentRotation = 0;
-        let isSpinning = false;
+        let papers = [];
 
-        function playTick() {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
-        }
-
-        function draw() {
-            const slice = (Math.PI * 2) / names.length;
-            ctx.clearRect(0, 0, 600, 600);
-            names.forEach((_, i) => {
-                const angle = currentRotation + i * slice;
-                ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 290, angle, angle + slice);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.save();
-                ctx.translate(300, 300);
-                ctx.rotate(angle + slice / 2);
-                ctx.fillStyle = (colors[i % colors.length].startsWith('#f')) ? 'black' : 'white';
-                ctx.font = "bold 24px sans-serif";
-                ctx.fillText(i + 1, 220, 10);
-                ctx.restore();
+        // Создаем "бумажки" в банке
+        function createPapers() {
+            names.forEach((name, i) => {
+                const el = document.createElement('div');
+                el.className = 'paper';
+                // Раскидываем случайно по банке
+                const x = Math.random() * (320 - 60);
+                const y = Math.random() * (400 - 30);
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                el.style.transform = `rotate(${Math.random() * 360}deg)`;
+                el.style.background = `hsl(${Math.random() * 360}, 70%, 70%)`;
+                container.appendChild(el);
+                papers.push({ el, x, y, vx: 0, vy: 0 });
             });
         }
 
-        function spin() {
-            if (isSpinning) return;
-            isSpinning = true;
-            document.getElementById('spinBtn').disabled = true;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            let duration = 6000;
+        function startDraw() {
+            document.getElementById('drawBtn').disabled = true;
+            let duration = 3000;
             let start = performance.now();
-            let totalRotation = Math.random() * 50 + 50;
-            let lastTickAngle = 0;
-            const slice = (Math.PI * 2) / names.length;
 
             function animate(now) {
                 let time = now - start;
-                let progress = Math.min(time / duration, 1);
-                let ease = 1 - Math.pow(1 - progress, 4);
-                currentRotation = totalRotation * ease;
+                let progress = time / duration;
 
-                // Звук щелчка при прохождении сектора
-                if (Math.floor(currentRotation / slice) > lastTickAngle) {
-                    playTick();
-                    lastTickAngle = Math.floor(currentRotation / slice);
+                if (progress < 1) {
+                    // Эффект тряски (перемешивания)
+                    papers.forEach(p => {
+                        p.vx = (Math.random() - 0.5) * 30;
+                        p.vy = (Math.random() - 0.5) * 30;
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        // Стенки
+                        if (p.x < 0 || p.x > 260) p.x = Math.random() * 260;
+                        if (p.y < 0 || p.y > 370) p.y = Math.random() * 370;
+
+                        p.el.style.left = p.x + 'px';
+                        p.el.style.top = p.y + 'px';
+                        p.el.style.transform = `rotate(${now + Math.random() * 10}deg)`;
+                    });
+                    requestAnimationFrame(animate);
+                } else {
+                    finishDraw();
                 }
-
-                draw();
-                if (progress < 1) requestAnimationFrame(animate);
-                else finishSpin();
             }
             requestAnimationFrame(animate);
         }
 
-        function finishSpin() {
-            const slice = (Math.PI * 2) / names.length;
-            const winningIndex = Math.floor(( (2 * Math.PI - (currentRotation % (2 * Math.PI))) + (1.5 * Math.PI) ) / slice) % names.length;
-            
-            document.getElementById('winner-name').innerText = names[winningIndex];
+        function finishDraw() {
+            const winner = names[Math.floor(Math.random() * names.length)];
+            document.getElementById('winner-paper').innerText = winner;
             document.getElementById('overlay').style.display = 'flex';
             
-            // Запуск конфетти
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#f1c40f', '#ffffff'] });
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         }
 
         function closeOverlay() {
             document.getElementById('overlay').style.display = 'none';
-            document.getElementById('spinBtn').disabled = false;
+            document.getElementById('drawBtn').disabled = false;
         }
 
-        draw();
+        createPapers();
     </script>
 </body>
 </html>
