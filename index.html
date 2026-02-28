@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aesthetic Lotto Jar</title>
+    <title>Paper Notes Lotto Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #f9f6f2;
-            --glass: rgba(255, 255, 255, 0.4);
+            --glass: rgba(255, 255, 255, 0.3);
             --gold: #d4a373;
             --text: #5e5e5e;
         }
@@ -21,6 +21,7 @@
             margin: 0; height: 100vh;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden;
+            perspective: 1000px; /* Глубина для 3D вращения бумажек */
         }
 
         h2 {
@@ -33,25 +34,40 @@
         #jar-container {
             position: relative; width: 320px; height: 420px;
             background: var(--glass);
-            border: 2px solid rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.6);
             border-radius: 120px 120px 40px 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05), inset 0 0 20px rgba(255,255,255,0.5);
-            backdrop-filter: blur(5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.03), inset 0 0 30px rgba(255,255,255,0.4);
+            backdrop-filter: blur(4px);
             overflow: hidden;
+            transform-style: preserve-3d;
         }
 
-        /* Золотая каемка сверху */
         #jar-container::before {
             content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 120px; height: 8px; background: var(--gold); border-radius: 0 0 10px 10px;
-            opacity: 0.6;
+            width: 100px; height: 6px; background: var(--gold); border-radius: 0 0 8px 8px;
+            opacity: 0.5;
         }
 
+        /* Сама Бумажка-записка */
         .paper {
-            position: absolute; width: 40px; height: 20px;
+            position: absolute; 
+            width: 45px; height: 18px; /* Чуть длиннее и уже */
             border-radius: 2px;
-            box-shadow: 1px 1px 4px rgba(0,0,0,0.05);
             transition: transform 0.1s linear;
+            transform-style: preserve-3d;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Добавляем 3D объем бумажке */
+        .paper::after {
+            content: ''; position: absolute; inset: 0;
+            border-radius: 2px;
+            /* Градиент имитирует сгиб бумаги или скрутку */
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0) 0%, 
+                rgba(255,255,255,0.4) 30%, 
+                rgba(0,0,0,0.05) 60%, 
+                rgba(255,255,255,0) 100%);
         }
 
         #draw-btn {
@@ -60,31 +76,35 @@
             text-transform: uppercase; border: none;
             background: white; color: var(--gold);
             border-radius: 40px; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
             transition: 0.3s;
         }
-        #draw-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #draw-btn:hover { transform: translateY(-1px); box-shadow: 0 7px 20px rgba(0,0,0,0.06); }
+        #draw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* Экран победителя */
         #overlay {
             display: none; position: fixed; inset: 0;
-            background: rgba(249, 246, 242, 0.98);
+            background: rgba(249, 246, 242, 0.99);
             z-index: 100; flex-direction: column; align-items: center; justify-content: center;
-            animation: fadeIn 0.8s ease;
+            animation: fadeIn 0.6s ease;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .winner-paper {
-            background: white; padding: 40px 60px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.05);
-            border-radius: 2px; text-align: center;
-            border: 1px solid #f0f0f0;
-            transform: rotate(-2deg);
+            background: white; padding: 35px 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            border-radius: 1px; text-align: center;
+            border: 1px solid #f2f2f2;
+            transform: rotate(-1.5deg) scale(0);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        
+        #overlay.active .winner-paper { transform: rotate(-1.5deg) scale(1); }
 
         .winner-name {
-            font-family: 'Playfair Display', serif; font-size: 34px; color: var(--gold); margin: 0;
+            font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold); margin: 0; font-weight: 400;
         }
     </style>
 </head>
@@ -97,22 +117,25 @@
 
     <button id="draw-btn" onclick="startSelection()">Начать розыгрыш</button>
 
-    <div id="overlay" onclick="location.reload()">
-        <p style="letter-spacing: 3px; font-size: 11px; margin-bottom: 20px; opacity: 0.5;">AND THE WINNER IS...</p>
+    <div id="overlay" onclick="closeOverlay()">
+        <p style="letter-spacing: 3px; font-size: 11px; margin-bottom: 25px; opacity: 0.5;">CONGRATULATIONS</p>
         <div class="winner-paper">
             <h1 id="winner-name" class="winner-name">Name</h1>
         </div>
-        <p style="margin-top: 50px; font-size: 10px; opacity: 0.3; letter-spacing: 1px;">TOUCH TO RESTART</p>
+        <p style="margin-top: 60px; font-size: 10px; opacity: 0.3; letter-spacing: 1px;">TOUCH TO CLOSE</p>
     </div>
 
     <script>
         const container = document.getElementById('jar-container');
         const params = new URLSearchParams(window.location.search);
-        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
-        const paperColors = ['#faedcd', '#f1e3d3', '#e9edc9', '#fefae0', '#faedcd'];
+        // Список имен из URL или дефолтный
+        const namesData = (params.get('names') || "Anna,Mark,Helen,John,Sarah,Olga,Ivan").split(',');
+        
+        // Пастельная палитра Pinterest (бежевый, кремовый, пыльный розовый, шалфей)
+        const paperColors = ['#f8f1e5', '#faedcd', '#f3e8dc', '#e9edc9', '#f6eac2'];
         const papers = [];
-        const TOTAL_PAPERS = 80;
+        const TOTAL_PAPERS = 70; // Чуть меньше, чтобы было просторнее
 
         function init() {
             for (let i = 0; i < TOTAL_PAPERS; i++) {
@@ -122,9 +145,10 @@
                 
                 const p = {
                     el,
-                    x: Math.random() * 260 + 20,
-                    y: Math.random() * 300 + 80,
+                    x: Math.random() * 250 + 20,
+                    y: Math.random() * 280 + 90,
                     r: Math.random() * 360,
+                    ry: Math.random() * 360, // Вращение по Y для 3D эффекта
                     vx: 0, vy: 0
                 };
                 
@@ -136,16 +160,17 @@
 
         function update() {
             papers.forEach(p => {
-                p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg)`;
+                // translate3d для производительности, rotateY добавляет "переворачивание"
+                p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotateZ(${p.r}deg) rotateY(${p.ry}deg)`;
             });
         }
 
         function startSelection() {
             const btn = document.getElementById('draw-btn');
-            btn.disabled = true; btn.style.opacity = '0.5';
+            btn.disabled = true; btn.style.opacity = '0.4';
 
             let start = performance.now();
-            const duration = 3500;
+            const duration = 4000; // 4 секунды вихря
 
             function animate(now) {
                 const elapsed = now - start;
@@ -153,32 +178,61 @@
 
                 if (progress < 1) {
                     papers.forEach(p => {
-                        // Плавный вихрь
-                        const power = Math.sin(progress * Math.PI) * 15;
+                        // Плавный вихрь (сначала разгон, потом затухание)
+                        const power = Math.sin(progress * Math.PI) * 18;
+                        
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
                         
-                        p.vx *= 0.95; p.vy *= 0.95;
+                        // Трение
+                        p.vx *= 0.96; p.vy *= 0.96;
+                        
                         p.x += p.vx; p.y += p.vy;
-                        p.r += p.vx * 2;
+                        p.r += (p.vx + p.vy) * 2; // Вращение вокруг оси Z
+                        p.ry += p.vx * 3; // Вращение вокруг оси Y (переворачивание бумажки)
 
-                        if (p.x < 10 || p.x > 270) p.vx *= -1.2;
+                        // Мягкие отскоки от стенок колбы
+                        if (p.x < 15 || p.x > 270) p.vx *= -1.2;
                         if (p.y < 40 || p.y > 380) p.vy *= -1.2;
                     });
                     update();
                     requestAnimationFrame(animate);
                 } else {
-                    const winner = realNames[Math.floor(Math.random() * realNames.length)];
-                    document.getElementById('winner-name').innerText = winner;
-                    document.getElementById('overlay').style.display = 'flex';
-                    
-                    confetti({
-                        particleCount: 60, spread: 50, origin: { y: 0.7 },
-                        colors: ['#d4a373', '#ffffff'], scalar: 0.7
-                    });
+                    finishSelection();
                 }
             }
             requestAnimationFrame(animate);
+        }
+
+        function finishSelection() {
+            // Выбираем случайное имя из списка
+            const winner = namesData[Math.floor(Math.random() * namesData.length)];
+            document.getElementById('winner-name').innerText = winner;
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.classList.add('active'), 50);
+            
+            // Эстетичное конфетти
+            confetti({
+                particleCount: 50, spread: 50, origin: { y: 0.7 },
+                colors: ['#d4a373', '#ffffff', '#faedcd'], scalar: 0.7, gravity: 0.6
+            });
+        }
+
+        function closeOverlay() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('draw-btn').disabled = false;
+                document.getElementById('draw-btn').style.opacity = '1';
+                // Сбрасываем бумажки в кучу для нового розыгрыша
+                papers.forEach(p => {
+                    p.x = Math.random() * 250 + 20;
+                    p.y = Math.random() * 280 + 90;
+                });
+                update();
+            }, 500);
         }
 
         init();
