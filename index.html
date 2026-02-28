@@ -3,190 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Aesthetic Raffle</title>
+    <title>Aesthetic Slow Raffle</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500;600&display=swap" rel="stylesheet">
-    
     <style>
-        :root {
-            --bg: #fdfaf6;
-            --gold: #c69363;
-            --glass-border: rgba(255, 255, 255, 0.8);
-        }
-
-        body {
-            background-color: var(--bg);
-            color: #444;
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 28px;
-            font-style: italic;
-            margin-bottom: 30px;
-            font-weight: 400;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-
-        /* Контейнер-колба */
+        :root { --bg: #fdfaf6; --gold: #c69363; }
+        body { background-color: var(--bg); color: #444; font-family: 'Montserrat', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; -webkit-font-smoothing: antialiased; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-style: italic; margin-bottom: 30px; font-weight: 400; letter-spacing: 1px; opacity: 0.8; }
+        
         #jar-wrapper {
-            position: relative;
-            width: 320px;
-            height: 450px;
-            background: rgba(255, 255, 255, 0.25);
-            border: 1.5px solid var(--glass-border);
-            border-radius: 120px 120px 50px 50px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.05), inset 0 0 50px rgba(255,255,255,0.4);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            overflow: hidden;
-            transform-style: preserve-3d;
+            position: relative; width: 310px; height: 440px;
+            background: rgba(255, 255, 255, 0.2); border: 1.5px solid rgba(255, 255, 255, 0.8);
+            border-radius: 110px 110px 45px 45px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.04), inset 0 0 40px rgba(255,255,255,0.4);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            overflow: hidden; transform-style: preserve-3d;
         }
 
-        /* Стилизация конверта */
-        .paper {
-            position: absolute;
-            width: 55px;
-            height: 38px;
-            will-change: transform;
-            filter: drop-shadow(2px 5px 6px rgba(0,0,0,0.1));
-        }
+        .paper { position: absolute; width: 55px; height: 38px; will-change: transform; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.08)); }
 
-        /* Кнопка */
         #draw-btn {
-            margin-top: 50px;
-            padding: 20px 70px;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            border: none;
-            background: white;
-            color: var(--gold);
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.04);
-            transition: all 0.4s ease;
-            -webkit-tap-highlight-color: transparent;
+            margin-top: 50px; padding: 18px 70px; font-size: 11px; font-weight: 600; letter-spacing: 3px;
+            text-transform: uppercase; border: none; background: white; color: var(--gold);
+            border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.03);
+            transition: 0.4s; -webkit-tap-highlight-color: transparent;
         }
+        #draw-btn:active { transform: scale(0.96); }
 
-        #draw-btn:hover {
-            background: var(--gold);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        #draw-btn:active {
-            transform: scale(0.95);
-        }
-
-        #draw-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* Экран результата */
-        #result-screen {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(253, 250, 246, 0.99);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .winner-card {
-            background: white;
-            padding: 50px 70px;
-            text-align: center;
-            border-radius: 2px;
-            border: 1px solid rgba(0,0,0,0.03);
-            box-shadow: 0 35px 80px rgba(0,0,0,0.08);
-            transform: scale(0.8) rotate(-2deg);
-            opacity: 0;
-            transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        #result-screen.active .winner-card {
-            transform: scale(1) rotate(-2deg);
-            opacity: 1;
-        }
-
-        .w-name {
-            font-family: 'Playfair Display', serif;
-            font-size: 40px;
-            color: var(--gold);
-            margin: 0;
-            font-weight: 400;
-        }
-
-        .instruction {
-            margin-top: 70px;
-            font-size: 10px;
-            opacity: 0.3;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
+        #result-screen { display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.99); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .winner-card { background: white; padding: 50px 70px; text-align: center; border-radius: 2px; box-shadow: 0 30px 70px rgba(0,0,0,0.07); transform: scale(0.8) rotate(-1deg); opacity: 0; transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #result-screen.active .winner-card { transform: scale(1) rotate(-1deg); opacity: 1; }
+        .w-name { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--gold); margin: 0; }
     </style>
 </head>
 <body>
 
-    <h2>Golden Giveaway</h2>
+    <h2>Golden Selection</h2>
 
     <div id="jar-wrapper">
         <div id="notes-container"></div>
     </div>
 
-    <button id="draw-btn" onclick="startSelection()">Pick the winner</button>
+    <button id="draw-btn" onclick="startSelection()">Begin the Draw</button>
 
     <div id="result-screen" onclick="location.reload()">
-        <p style="letter-spacing: 5px; font-size: 11px; margin-bottom: 30px; opacity: 0.5;">CONGRATULATIONS</p>
+        <p style="letter-spacing: 5px; font-size: 10px; margin-bottom: 25px; opacity: 0.4;">AND THE WINNER IS</p>
         <div class="winner-card">
             <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p class="instruction">Click anywhere to restart</p>
+        <p style="margin-top: 60px; font-size: 9px; opacity: 0.3; letter-spacing: 2px;">CLICK TO RESTART</p>
     </div>
 
     <script>
         const container = document.getElementById('notes-container');
-        
-        // Получаем имена из URL (?names=Иван,Мария...)
         const params = new URLSearchParams(window.location.search);
-        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah,Olga,Ivan,Kate").split(',');
+        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
         const papers = [];
-        const TOTAL_ENVELOPES = 45; // Оптимально для красоты
+        const TOTAL_ENVELOPES = 40; 
 
-        // Шаблон конверта (инлайновый SVG для корректного отображения на Pro Max)
         const envelopeSVG = `
             <svg width="55" height="38" viewBox="0 0 55 38" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0.75" y="0.75" width="53.5" height="36.5" rx="1.5" fill="white" stroke="#D8C3A5" stroke-width="1.2"/>
                 <path d="M1 37L27.5 19L54 37" stroke="#E8DBC9" stroke-width="1"/>
                 <path d="M1 1H54L27.5 19L1 1Z" fill="#FBF8F3" stroke="#D8C3A5" stroke-width="1.2"/>
-                <circle cx="27.5" cy="19" r="2.5" fill="#C69363" stroke="#D8C3A5" stroke-width="0.5"/>
+                <circle cx="27.5" cy="19" r="2.2" fill="#C69363" stroke="#D8C3A5" stroke-width="0.5"/>
                 <rect x="1" y="1" width="53" height="36" rx="1" fill="url(#grad)" fill-opacity="0.15"/>
                 <defs>
                     <linearGradient id="grad" x1="0" y1="19" x2="55" y2="19" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#BEBEBE" stop-opacity="0.3"/>
-                        <stop offset="0.45" stop-color="white" stop-opacity="0"/>
-                        <stop offset="0.55" stop-color="white" stop-opacity="0"/>
-                        <stop offset="1" stop-color="#9E9E9E" stop-opacity="0.2"/>
+                        <stop stop-color="#BEBEBE" stop-opacity="0.3"/><stop offset="0.5" stop-color="white" stop-opacity="0"/><stop offset="1" stop-color="#9E9E9E" stop-opacity="0.2"/>
                     </linearGradient>
                 </defs>
-            </svg>
-        `;
+            </svg>`;
 
         function init() {
             const tints = ['#ffffff', '#faf6ed', '#fefdfb', '#f7f1e3'];
@@ -194,21 +82,9 @@
                 const div = document.createElement('div');
                 div.className = 'paper';
                 div.innerHTML = envelopeSVG;
-                
-                // Рандомный пастельный оттенок
                 const rect = div.querySelector('rect');
                 if (rect) rect.setAttribute('fill', tints[i % tints.length]);
-
-                const p = {
-                    el: div,
-                    x: Math.random() * 240 + 10,
-                    y: Math.random() * 320 + 70,
-                    r: Math.random() * 360,
-                    ry: Math.random() * 360,
-                    vx: (Math.random() - 0.5) * 1.5,
-                    vy: (Math.random() - 0.5) * 1.5
-                };
-                
+                const p = { el: div, x: Math.random() * 230 + 15, y: Math.random() * 300 + 100, r: Math.random() * 360, ry: Math.random() * 360, vx: 0, vy: 0 };
                 container.appendChild(div);
                 papers.push(p);
             }
@@ -216,81 +92,46 @@
         }
 
         function update() {
-            papers.forEach(p => {
-                p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotateZ(${p.r}deg) rotateY(${p.ry}deg)`;
-            });
+            papers.forEach(p => { p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotateZ(${p.r}deg) rotateY(${p.ry}deg)`; });
         }
 
         function startSelection() {
             const btn = document.getElementById('draw-btn');
-            btn.disabled = true;
-
+            btn.disabled = true; btn.style.opacity = '0.3';
             let start = performance.now();
-            const duration = 5500; // Медленная, медитативная анимация
+            const duration = 8000; // Теперь 8 секунд чистого наслаждения
 
             function animate(now) {
                 const elapsed = now - start;
                 const progress = elapsed / duration;
 
                 if (progress < 1) {
+                    // Более мягкий разгон и очень долгое затухание
+                    const power = Math.sin(progress * Math.PI) * 9; 
+                    
                     papers.forEach(p => {
-                        // Плавный волнообразный импульс
-                        const power = Math.sin(progress * Math.PI) * 12;
-                        
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
-                        
-                        // Сопротивление среды (вязкость)
-                        p.vx *= 0.96; 
-                        p.vy *= 0.96;
-                        
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        
-                        // Медленное вращение
-                        p.r += p.vx * 1.5;
-                        p.ry += p.vx * 2.5;
+                        p.vx *= 0.97; p.vy *= 0.97; // Повышенная вязкость
+                        p.x += p.vx; p.y += p.vy;
+                        p.r += p.vx * 1.1; p.ry += p.vx * 2;
 
-                        // Мягкий отскок от стенок
-                        if (p.x < 5 || p.x > 250) {
-                            p.vx *= -0.7;
-                            p.x = p.x < 5 ? 5 : 250;
-                        }
-                        if (p.y < 45 || p.y > 390) {
-                            p.vy *= -0.7;
-                            p.y = p.y < 45 ? 45 : 390;
-                        }
+                        if (p.x < 5 || p.x > 245) { p.vx *= -0.6; p.x = p.x < 5 ? 5 : 245; }
+                        if (p.y < 45 || p.y > 380) { p.vy *= -0.6; p.y = p.y < 45 ? 45 : 380; }
                     });
                     update();
                     requestAnimationFrame(animate);
                 } else {
-                    showWinner();
+                    const winner = realNames[Math.floor(Math.random() * realNames.length)];
+                    document.getElementById('winner-name').innerText = winner;
+                    const sc = document.getElementById('result-screen');
+                    sc.style.display = 'flex';
+                    setTimeout(() => sc.classList.add('active'), 50);
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.7 }, colors: ['#c69363', '#ffffff'] });
                 }
             }
             requestAnimationFrame(animate);
         }
-
-        function showWinner() {
-            const winner = realNames[Math.floor(Math.random() * realNames.length)];
-            document.getElementById('winner-name').innerText = winner;
-            
-            const screen = document.getElementById('result-screen');
-            screen.style.display = 'flex';
-            
-            // Небольшая задержка для активации анимации появления
-            setTimeout(() => screen.classList.add('active'), 50);
-            
-            // Премиальное конфетти
-            confetti({
-                particleCount: 120,
-                spread: 70,
-                origin: { y: 0.75 },
-                colors: ['#c69363', '#ffffff', '#f4f1ea'],
-                scalar: 0.8,
-                gravity: 0.7
-            });
-        }
-
         init();
     </script>
 </body>
