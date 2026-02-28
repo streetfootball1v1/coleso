@@ -3,117 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aesthetic Paper Jar</title>
+    <title>Clear Aesthetic Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #fdfaf6;
-            --glass: rgba(255, 255, 255, 0.4);
-            --gold: #d4a373;
-            --text: #4a4a4a;
+            --bg: #f4f1ea; /* Чуть более насыщенный бежевый для контраста */
+            --glass-inner: rgba(255, 255, 255, 0.2);
+            --gold: #c69363;
+            --text: #3d3d3d;
         }
 
         body {
             background-color: var(--bg); color: var(--text);
             font-family: 'Montserrat', sans-serif; margin: 0; height: 100vh;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden; perspective: 1000px;
+            overflow: hidden; perspective: 1200px;
         }
 
-        h2 { font-family: 'Playfair Display', serif; font-size: 30px; font-style: italic; font-weight: 400; margin-bottom: 25px; letter-spacing: 1px; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-style: italic; margin-bottom: 25px; opacity: 0.8; }
 
-        /* Стеклянная колба */
         #jar-wrapper {
             position: relative; width: 320px; height: 440px;
-            background: var(--glass); border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 120px 120px 45px 45px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.02), inset 0 0 40px rgba(255,255,255,0.5);
-            backdrop-filter: blur(8px); overflow: hidden; transform-style: preserve-3d;
+            background: var(--glass-inner);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 120px 120px 50px 50px;
+            /* Усиливаем тень самой колбы */
+            box-shadow: 0 25px 50px rgba(0,0,0,0.08), inset 0 0 50px rgba(255,255,255,0.4);
+            backdrop-filter: blur(10px); overflow: hidden; transform-style: preserve-3d;
         }
 
-        /* Золотое кольцо сверху */
-        #jar-wrapper::before {
-            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 100px; height: 4px; background: var(--gold); border-radius: 0 0 10px 10px; opacity: 0.4;
-        }
-
-        /* Стилизация бумажки */
+        /* Улучшенная бумажка: четкие края и внутренняя тень */
         .paper {
-            position: absolute; width: 50px; height: 22px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='22' viewBox='0 0 50 22'%3E%3Crect width='50' height='22' fill='%23fff' rx='2'/%3E%3Cpath d='M0 11h50' stroke='rgba(0,0,0,0.05)' stroke-width='1'/%3E%3Cpath d='M10 0v22M20 0v22M30 0v22M40 0v22' stroke='rgba(0,0,0,0.03)' stroke-width='0.5'/%3E%3Clinear-gradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='rgba(0,0,0,0.1)'/%3E%3Cstop offset='50%25' stop-color='rgba(255,255,255,0)'/%3E%3Cstop offset='100%25' stop-color='rgba(0,0,0,0.05)'/%3E%3C/linear-gradient%3E%3Crect width='50' height='22' fill='url(%23g)'/%3E%3C/svg%3E");
+            position: absolute; width: 54px; height: 24px;
+            /* Новый SVG: более четкий контур и выраженный сгиб */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='54' height='24' viewBox='0 0 54 24'%3E%3Crect x='0.5' y='0.5' width='53' height='23' rx='2' fill='%23fff' stroke='rgba(0,0,0,0.15)' stroke-width='0.5'/%3E%3Cpath d='M27 1v22' stroke='rgba(0,0,0,0.08)' stroke-width='1'/%3E%3Clinear-gradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='rgba(0,0,0,0.05)'/%3E%3Cstop offset='45%25' stop-color='rgba(255,255,255,0)'/%3E%3Cstop offset='55%25' stop-color='rgba(255,255,255,0)'/%3E%3Cstop offset='100%25' stop-color='rgba(0,0,0,0.08)'/%3E%3C/linear-gradient%3E%3Crect x='0.5' y='0.5' width='53' height='23' rx='2' fill='url(%23g)'/%3E%3C/svg%3E");
             background-size: contain; background-repeat: no-repeat;
-            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.08));
+            /* Усиленная тень бумажки для глубины */
+            filter: drop-shadow(2px 4px 5px rgba(0,0,0,0.12));
             will-change: transform;
         }
 
         #draw-btn {
-            margin-top: 50px; padding: 18px 60px;
-            font-size: 12px; font-weight: 500; letter-spacing: 3px;
+            margin-top: 50px; padding: 18px 65px;
+            font-size: 11px; font-weight: 600; letter-spacing: 3px;
             text-transform: uppercase; border: none;
             background: white; color: var(--gold);
             border-radius: 50px; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: 0.4s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: 0.4s;
         }
-        #draw-btn:hover { background: var(--gold); color: white; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(212, 163, 115, 0.3); }
+        #draw-btn:hover { background: var(--gold); color: white; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(198, 147, 99, 0.4); }
 
-        /* Модальное окно */
         #result-screen {
-            display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.99);
+            display: none; position: fixed; inset: 0; background: rgba(244, 241, 234, 0.98);
             z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
-            animation: fadeIn 0.6s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .winner-card {
             background: white; padding: 50px 70px; text-align: center;
-            border-radius: 2px; border: 1px solid #f2f2f2;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+            border-radius: 4px; border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 30px 70px rgba(0,0,0,0.1);
             transform: scale(0.8) rotate(-2deg); opacity: 0; transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #result-screen.active .winner-card { transform: scale(1) rotate(-2deg); opacity: 1; }
-        .w-name { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--gold); margin: 0; font-weight: 400; }
+        .w-name { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--gold); margin: 0; font-weight: 700; }
     </style>
 </head>
 <body>
 
-    <h2>The Lucky Selection</h2>
+    <h2>Aesthetic Raffle</h2>
 
     <div id="jar-wrapper">
         <div id="notes-container"></div>
     </div>
 
-    <button id="draw-btn" onclick="startSelection()">Pick a Ticket</button>
+    <button id="draw-btn" onclick="startSelection()">Выбрать счастливчика</button>
 
     <div id="result-screen" onclick="location.reload()">
-        <p style="letter-spacing: 5px; font-size: 11px; margin-bottom: 30px; opacity: 0.4; font-weight: 500;">CONGRATULATIONS</p>
+        <p style="letter-spacing: 5px; font-size: 10px; margin-bottom: 30px; opacity: 0.5; font-weight: 500;">ПОБЕДИТЕЛЬ ВЫБРАН</p>
         <div class="winner-card">
             <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p style="margin-top: 70px; font-size: 10px; opacity: 0.3; letter-spacing: 2px;">TOUCH ANYWHERE TO RESTART</p>
+        <p style="margin-top: 70px; font-size: 9px; opacity: 0.4; letter-spacing: 2px;">НАЖМИ, ЧТОБЫ СБРОСИТЬ</p>
     </div>
 
     <script>
         const container = document.getElementById('notes-container');
         const params = new URLSearchParams(window.location.search);
-        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
+        const realNames = (params.get('names') || "Анна,Иван,Мария,Дмитрий,Елена").split(',');
         
         const papers = [];
-        const TOTAL_NOTES = 60; 
+        const TOTAL_NOTES = 65; 
 
         function init() {
+            // Цветовые вариации бумажек для естественности
+            const tints = ['#ffffff', '#fff9f0', '#fcfcfc', '#f7f1e3'];
             for (let i = 0; i < TOTAL_NOTES; i++) {
                 const div = document.createElement('div');
                 div.className = 'paper';
                 
-                // Легкий оттенок для разных бумажек
-                const hues = [0, 10, -5, 5];
-                div.style.filter += ` hue-rotate(${hues[i % 4]}deg) brightness(${0.95 + Math.random()*0.1})`;
+                // Рандомный оттенок
+                div.style.backgroundColor = tints[i % tints.length];
                 
                 const p = {
                     el: div,
-                    x: Math.random() * 250 + 20,
-                    y: Math.random() * 300 + 80,
+                    x: Math.random() * 250 + 10,
+                    y: Math.random() * 320 + 80,
                     r: Math.random() * 360,
                     ry: Math.random() * 360,
                     vx: 0, vy: 0
@@ -136,7 +130,7 @@
             btn.disabled = true; btn.style.opacity = '0.3';
 
             let start = performance.now();
-            const duration = 4000;
+            const duration = 3500;
 
             function animate(now) {
                 const elapsed = now - start;
@@ -144,17 +138,17 @@
 
                 if (progress < 1) {
                     papers.forEach(p => {
-                        const power = Math.sin(progress * Math.PI) * 20;
+                        const power = Math.sin(progress * Math.PI) * 22;
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
                         
-                        p.vx *= 0.94; p.vy *= 0.94;
+                        p.vx *= 0.93; p.vy *= 0.93;
                         p.x += p.vx; p.y += p.vy;
                         p.r += p.vx * 3;
-                        p.ry += p.vx * 5;
+                        p.ry += p.vx * 6;
 
-                        if (p.x < 15 || p.x > 255) p.vx *= -1.2;
-                        if (p.y < 50 || p.y > 390) p.vy *= -1.2;
+                        if (p.x < 5 || p.x > 260) p.vx *= -1.2;
+                        if (p.y < 40 || p.y > 390) p.vy *= -1.2;
                     });
                     update();
                     requestAnimationFrame(animate);
@@ -166,14 +160,13 @@
                     setTimeout(() => screen.classList.add('active'), 50);
                     
                     confetti({
-                        particleCount: 80, spread: 70, origin: { y: 0.75 },
-                        colors: ['#d4a373', '#ffffff'], scalar: 0.8, gravity: 0.7
+                        particleCount: 100, spread: 80, origin: { y: 0.75 },
+                        colors: ['#c69363', '#ffffff', '#e2c2a4'], scalar: 0.8, gravity: 0.8
                     });
                 }
             }
             requestAnimationFrame(animate);
         }
-
         init();
     </script>
 </body>
