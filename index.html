@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aesthetic Premium Raffle</title>
+    <title>Aesthetic Envelope Raffle</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #fdfaf6;
             --gold: #c69363;
-            --border-color: #d8c3a5; /* Яркая окантовка бумажек */
+            --envelope-border: #d8c3a5; /* Четкая окантовка конвертов */
         }
 
         body {
@@ -20,31 +20,31 @@
             overflow: hidden; -webkit-font-smoothing: antialiased;
         }
 
-        h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-style: italic; margin-bottom: 30px; font-weight: 400; letter-spacing: 1px; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-style: italic; margin-bottom: 25px; font-weight: 400; letter-spacing: 1px; }
 
         #jar-wrapper {
-            position: relative; width: 330px; height: 450px;
+            position: relative; width: 320px; height: 440px;
             background: rgba(255, 255, 255, 0.25);
             border: 1.5px solid rgba(255, 255, 255, 0.8);
-            border-radius: 120px 120px 50px 50px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.05), inset 0 0 50px rgba(255,255,255,0.4);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 110px 110px 45px 45px;
+            box-shadow: 0 25px 55px rgba(0,0,0,0.04), inset 0 0 45px rgba(255,255,255,0.4);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             overflow: hidden; transform-style: preserve-3d;
         }
 
         .paper {
-            position: absolute; width: 65px; height: 28px; /* Увеличенный размер */
+            position: absolute; width: 55px; height: 38px; /* Оптимальный размер конверта */
             will-change: transform;
-            filter: drop-shadow(2px 5px 6px rgba(0,0,0,0.12)); /* Глубокая тень */
+            filter: drop-shadow(2px 5px 6px rgba(0,0,0,0.1));
         }
 
         #draw-btn {
-            margin-top: 50px; padding: 20px 70px;
-            font-size: 12px; font-weight: 600; letter-spacing: 3px;
+            margin-top: 45px; padding: 18px 65px;
+            font-size: 11px; font-weight: 600; letter-spacing: 3px;
             text-transform: uppercase; border: none;
             background: white; color: var(--gold);
             border-radius: 50px; cursor: pointer;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.04); transition: 0.3s;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.03); transition: 0.3s;
             -webkit-tap-highlight-color: transparent;
         }
         #draw-btn:active { transform: scale(0.96); background: var(--gold); color: white; }
@@ -54,30 +54,31 @@
             z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
         }
         .winner-card {
-            background: white; padding: 50px 80px; text-align: center;
+            background: white; padding: 40px 60px; text-align: center;
             border-radius: 2px; border: 1px solid rgba(0,0,0,0.03);
-            box-shadow: 0 35px 80px rgba(0,0,0,0.08);
-            transform: rotate(-2deg);
+            box-shadow: 0 30px 70px rgba(0,0,0,0.06);
+            transform: scale(0.9) rotate(-1deg); opacity: 0; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .w-name { font-family: 'Playfair Display', serif; font-size: 40px; color: var(--gold); margin: 0; }
+        #result-screen.active .winner-card { transform: scale(1) rotate(-1deg); opacity: 1; }
+        .w-name { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--gold); margin: 0; }
     </style>
 </head>
 <body>
 
-    <h2>Golden Giveaway</h2>
+    <h2>Golden Mail</h2>
 
     <div id="jar-wrapper">
         <div id="notes-container"></div>
     </div>
 
-    <button id="draw-btn" onclick="startSelection()">Pick the winner</button>
+    <button id="draw-btn" onclick="startSelection()">Pick an Envelope</button>
 
     <div id="result-screen" onclick="location.reload()">
-        <p style="letter-spacing: 5px; font-size: 11px; margin-bottom: 30px; opacity: 0.5;">CONGRATULATIONS</p>
+        <p style="letter-spacing: 4px; font-size: 10px; margin-bottom: 25px; opacity: 0.5;">CONGRATULATIONS</p>
         <div class="winner-card">
             <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p style="margin-top: 70px; font-size: 10px; opacity: 0.3; letter-spacing: 2px;">CLICK TO DISMISS</p>
+        <p style="margin-top: 60px; font-size: 9px; opacity: 0.3; letter-spacing: 2px;">CLICK ANYWHERE TO RESTART</p>
     </div>
 
     <script>
@@ -86,31 +87,40 @@
         const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
         const papers = [];
-        const TOTAL_NOTES = 45; // Меньше количество = больше премиальности
+        const TOTAL_ENVELOPES = 50; // Оптимальное количество для эстетики
 
-        const paperSVG = `
-            <svg width="65" height="28" viewBox="0 0 65 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="63" height="26" rx="2" fill="white" stroke="#D8C3A5" stroke-width="1.5"/>
-                <path d="M32.5 1V27" stroke="black" stroke-opacity="0.06" stroke-width="1.5"/>
-                <rect x="1" y="1" width="63" height="26" rx="2" fill="url(#grad)" fill-opacity="0.25"/>
+        // SVG-шаблон элегантного конверта
+        const envelopeSVG = `
+            <svg width="55" height="38" viewBox="0 0 55 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0.75" y="0.75" width="53.5" height="36.5" rx="1.5" fill="white" stroke="#D8C3A5" stroke-width="1.5"/>
+                <path d="M1 37L27.5 19L54 37" stroke="#E8DBC9" stroke-width="1"/>
+                <path d="M1 1H54L27.5 19L1 1Z" fill="#FBF8F3" stroke="#D8C3A5" stroke-width="1.5"/>
+                <circle cx="27.5" cy="19" r="2" fill="#C69363" stroke="#D8C3A5" stroke-width="0.5"/>
+                <rect x="1" y="1" width="53" height="36" rx="1" fill="url(#grad)" fill-opacity="0.2"/>
                 <defs>
-                    <linearGradient id="grad" x1="0" y1="14" x2="65" y2="14" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#BEBEBE" stop-opacity="0.3"/>
-                        <stop offset="0.45" stop-color="white" stop-opacity="0"/>
-                        <stop offset="0.55" stop-color="white" stop-opacity="0"/>
-                        <stop offset="1" stop-color="#9E9E9E" stop-opacity="0.2"/>
+                    <linearGradient id="grad" x1="0" y1="19" x2="55" y2="19" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#BEBEBE" stop-opacity="0.2"/>
+                        <stop offset="0.4" stop-color="white" stop-opacity="0"/>
+                        <stop offset="0.6" stop-color="white" stop-opacity="0"/>
+                        <stop offset="1" stop-color="#9E9E9E" stop-opacity="0.15"/>
                     </linearGradient>
                 </defs>
             </svg>
         `;
 
         function init() {
-            for (let i = 0; i < TOTAL_NOTES; i++) {
+            // Палитра пастельных оттенков для конвертов
+            const tints = ['#ffffff', '#faf6ed', '#fefdfb', '#f7f1e3'];
+            for (let i = 0; i < TOTAL_ENVELOPES; i++) {
                 const div = document.createElement('div');
                 div.className = 'paper';
-                div.innerHTML = paperSVG;
+                div.innerHTML = envelopeSVG;
                 
-                div.style.filter += ` brightness(${0.95 + Math.random() * 0.1})`;
+                // Красим фон SVG в рандомный пастельный цвет
+                const svgRect = div.querySelector('rect');
+                if (svgRect) svgRect.setAttribute('fill', tints[i % tints.length]);
+                
+                div.style.filter += ` brightness(${0.98 + Math.random() * 0.04})`;
 
                 const p = {
                     el: div,
@@ -146,13 +156,13 @@
 
                 if (progress < 1) {
                     papers.forEach(p => {
-                        const power = Math.sin(progress * Math.PI) * 20;
+                        const power = Math.sin(progress * Math.PI) * 18;
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
-                        p.vx *= 0.94; p.vy *= 0.94;
+                        p.vx *= 0.93; p.vy *= 0.93;
                         p.x += p.vx; p.y += p.vy;
-                        p.r += p.vx * 2;
-                        p.ry += p.vx * 4;
+                        p.r += p.vx * 1.5;
+                        p.ry += p.vx * 3;
 
                         if (p.x < 5 || p.x > 250) p.vx *= -1.1;
                         if (p.y < 45 || p.y > 390) p.vy *= -1.1;
@@ -164,8 +174,8 @@
                     document.getElementById('winner-name').innerText = winner;
                     const screen = document.getElementById('result-screen');
                     screen.style.display = 'flex';
-                    setTimeout(() => screen.classList.add('active'), 100);
-                    confetti({ particleCount: 120, spread: 70, origin: { y: 0.7 }, colors: ['#c69363', '#ffffff'] });
+                    setTimeout(() => screen.classList.add('active'), 50);
+                    confetti({ particleCount: 100, spread: 65, origin: { y: 0.75 }, colors: ['#c69363', '#ffffff'] });
                 }
             }
             requestAnimationFrame(animate);
