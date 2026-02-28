@@ -3,156 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paper Notes Lotto Jar</title>
+    <title>Realistic Paper Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f9f6f2;
-            --glass: rgba(255, 255, 255, 0.3);
+            --bg: #fdfaf6;
+            --glass: rgba(255, 255, 255, 0.4);
             --gold: #d4a373;
-            --text: #5e5e5e;
+            --text: #4a4a4a;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Montserrat', sans-serif;
-            margin: 0; height: 100vh;
+            background-color: var(--bg); color: var(--text);
+            font-family: 'Montserrat', sans-serif; margin: 0; height: 100vh;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             overflow: hidden;
-            perspective: 1000px; /* Глубина для 3D вращения бумажек */
         }
 
-        h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 32px; font-style: italic; font-weight: 400;
-            margin-bottom: 30px; letter-spacing: 1px;
-        }
+        h2 { font-family: 'Playfair Display', serif; font-size: 30px; font-style: italic; font-weight: 400; margin-bottom: 25px; }
 
-        /* Эстетичная Колба */
-        #jar-container {
-            position: relative; width: 320px; height: 420px;
-            background: var(--glass);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+        #jar-wrapper {
+            position: relative; width: 320px; height: 430px;
+            background: var(--glass); border: 2px solid rgba(255, 255, 255, 0.7);
             border-radius: 120px 120px 40px 40px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.03), inset 0 0 30px rgba(255,255,255,0.4);
-            backdrop-filter: blur(4px);
-            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03), inset 0 0 30px rgba(255,255,255,0.4);
+            backdrop-filter: blur(5px); overflow: hidden;
             transform-style: preserve-3d;
         }
 
-        #jar-container::before {
+        /* Золотая каемка сверху */
+        #jar-wrapper::before {
             content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 100px; height: 6px; background: var(--gold); border-radius: 0 0 8px 8px;
-            opacity: 0.5;
+            width: 90px; height: 5px; background: var(--gold); border-radius: 0 0 10px 10px; opacity: 0.5;
         }
 
-        /* Сама Бумажка-записка */
-        .paper {
-            position: absolute; 
-            width: 45px; height: 18px; /* Чуть длиннее и уже */
-            border-radius: 2px;
-            transition: transform 0.1s linear;
-            transform-style: preserve-3d;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .paper-note {
+            position: absolute; width: 40px; height: 40px; /* Размер картинки */
+            /* ПНГ-изображение скрученной бумажки (Base64) */
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAAtSURBVFhH7cExAQAAAMKg9U9tCY+eAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4G99jAABh22LdAAAAABJRU5ErkJggg==");
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            opacity: 0.9; transform-style: preserve-3d;
+            will-change: transform;
         }
 
-        /* Добавляем 3D объем бумажке */
-        .paper::after {
-            content: ''; position: absolute; inset: 0;
-            border-radius: 2px;
-            /* Градиент имитирует сгиб бумаги или скрутку */
-            background: linear-gradient(90deg, 
-                rgba(255,255,255,0) 0%, 
-                rgba(255,255,255,0.4) 30%, 
-                rgba(0,0,0,0.05) 60%, 
-                rgba(255,255,255,0) 100%);
-        }
+        /* Спецэффект: разные оттенки бумаги */
+        .paper-note:nth-child(2n) { filter: hue-rotate(10deg); }
+        .paper-note:nth-child(3n) { filter: brightness(0.9) hue-rotate(-10deg); }
 
         #draw-btn {
-            margin-top: 40px; padding: 18px 50px;
+            margin-top: 40px; padding: 18px 55px;
             font-size: 13px; font-weight: 500; letter-spacing: 2px;
             text-transform: uppercase; border: none;
             background: white; color: var(--gold);
             border-radius: 40px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: 0.3s;
         }
-        #draw-btn:hover { transform: translateY(-1px); box-shadow: 0 7px 20px rgba(0,0,0,0.06); }
+        #draw-btn:hover { background: #bc8a5f; color: white; transform: translateY(-1px); }
         #draw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Экран победителя */
-        #overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(249, 246, 242, 0.99);
-            z-index: 100; flex-direction: column; align-items: center; justify-content: center;
-            animation: fadeIn 0.6s ease;
+        /* Окно победителя */
+        #result-screen {
+            display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.98);
+            z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
+            animation: fadeIn 0.8s ease;
         }
-
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .winner-paper {
-            background: white; padding: 35px 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-            border-radius: 1px; text-align: center;
-            border: 1px solid #f2f2f2;
-            transform: rotate(-1.5deg) scale(0);
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .ticket-box {
+            background: white; padding: 35px 50px; text-align: center;
+            border-radius: 2px; border: 1px solid #f2f2f2;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            transform: scale(0); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        
-        #overlay.active .winner-paper { transform: rotate(-1.5deg) scale(1); }
-
-        .winner-name {
-            font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold); margin: 0; font-weight: 400;
-        }
+        #result-screen.active .ticket-box { transform: scale(1); }
+        .w-name { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold); margin: 0; font-weight: 400; }
     </style>
 </head>
 <body>
 
-    <h2>The Lucky Draw</h2>
+    <h2>Gold Collection</h2>
 
-    <div id="jar-container">
-        </div>
+    <div id="jar-wrapper">
+        <div id="notes-container"></div>
+    </div>
 
-    <button id="draw-btn" onclick="startSelection()">Начать розыгрыш</button>
+    <button id="draw-btn" onclick="startSelection()">Pick the Winner</button>
 
-    <div id="overlay" onclick="closeOverlay()">
+    <div id="result-screen" onclick="closeScreen()">
         <p style="letter-spacing: 3px; font-size: 11px; margin-bottom: 25px; opacity: 0.5;">CONGRATULATIONS</p>
-        <div class="winner-paper">
-            <h1 id="winner-name" class="winner-name">Name</h1>
+        <div class="ticket-box">
+            <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p style="margin-top: 60px; font-size: 10px; opacity: 0.3; letter-spacing: 1px;">TOUCH TO CLOSE</p>
+        <p style="margin-top: 60px; font-size: 10px; opacity: 0.3;">TOUCH TO EXIT</p>
     </div>
 
     <script>
-        const container = document.getElementById('jar-container');
+        const container = document.getElementById('notes-container');
         const params = new URLSearchParams(window.location.search);
+        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
-        // Список имен из URL или дефолтный
-        const namesData = (params.get('names') || "Anna,Mark,Helen,John,Sarah,Olga,Ivan").split(',');
-        
-        // Пастельная палитра Pinterest (бежевый, кремовый, пыльный розовый, шалфей)
-        const paperColors = ['#f8f1e5', '#faedcd', '#f3e8dc', '#e9edc9', '#f6eac2'];
         const papers = [];
-        const TOTAL_PAPERS = 70; // Чуть меньше, чтобы было просторнее
+        const TOTAL_NOTES = 70; // 70 летящих билетиков
 
         function init() {
-            for (let i = 0; i < TOTAL_PAPERS; i++) {
-                const el = document.createElement('div');
-                el.className = 'paper';
-                el.style.backgroundColor = paperColors[i % paperColors.length];
+            for (let i = 0; i < TOTAL_NOTES; i++) {
+                const div = document.createElement('div');
+                div.className = 'paper-note';
                 
                 const p = {
-                    el,
-                    x: Math.random() * 250 + 20,
-                    y: Math.random() * 280 + 90,
+                    el: div,
+                    x: Math.random() * 260 + 20,
+                    y: Math.random() * 300 + 80,
                     r: Math.random() * 360,
-                    ry: Math.random() * 360, // Вращение по Y для 3D эффекта
+                    ry: Math.random() * 360, // 3D вращение
                     vx: 0, vy: 0
                 };
                 
-                container.appendChild(el);
+                container.appendChild(div);
                 papers.push(p);
             }
             update();
@@ -160,7 +128,6 @@
 
         function update() {
             papers.forEach(p => {
-                // translate3d для производительности, rotateY добавляет "переворачивание"
                 p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotateZ(${p.r}deg) rotateY(${p.ry}deg)`;
             });
         }
@@ -170,7 +137,7 @@
             btn.disabled = true; btn.style.opacity = '0.4';
 
             let start = performance.now();
-            const duration = 4000; // 4 секунды вихря
+            const duration = 4000;
 
             function animate(now) {
                 const elapsed = now - start;
@@ -178,61 +145,38 @@
 
                 if (progress < 1) {
                     papers.forEach(p => {
-                        // Плавный вихрь (сначала разгон, потом затухание)
-                        const power = Math.sin(progress * Math.PI) * 18;
-                        
+                        const power = Math.sin(progress * Math.PI) * 15;
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
                         
-                        // Трение
-                        p.vx *= 0.96; p.vy *= 0.96;
-                        
+                        p.vx *= 0.95; p.vy *= 0.95;
                         p.x += p.vx; p.y += p.vy;
-                        p.r += (p.vx + p.vy) * 2; // Вращение вокруг оси Z
-                        p.ry += p.vx * 3; // Вращение вокруг оси Y (переворачивание бумажки)
+                        p.r += p.vx * 2;
+                        p.ry += p.vx * 3;
 
-                        // Мягкие отскоки от стенок колбы
-                        if (p.x < 15 || p.x > 270) p.vx *= -1.2;
-                        if (p.y < 40 || p.y > 380) p.vy *= -1.2;
+                        // Стенки
+                        if (p.x < 15 || p.x > 265) p.vx *= -1.2;
+                        if (p.y < 40 || p.y > 385) p.vy *= -1.2;
                     });
                     update();
                     requestAnimationFrame(animate);
                 } else {
-                    finishSelection();
+                    const winner = realNames[Math.floor(Math.random() * realNames.length)];
+                    document.getElementById('winner-name').innerText = winner;
+                    const screen = document.getElementById('result-screen');
+                    screen.style.display = 'flex';
+                    setTimeout(() => screen.classList.add('active'), 100);
+                    
+                    confetti({
+                        particleCount: 50, spread: 60, colors: ['#d4a373', '#ffffff', '#faedcd'], origin: { y: 0.7 }, scalar: 0.7, gravity: 0.6
+                    });
                 }
             }
             requestAnimationFrame(animate);
         }
 
-        function finishSelection() {
-            // Выбираем случайное имя из списка
-            const winner = namesData[Math.floor(Math.random() * namesData.length)];
-            document.getElementById('winner-name').innerText = winner;
-            const overlay = document.getElementById('overlay');
-            overlay.style.display = 'flex';
-            setTimeout(() => overlay.classList.add('active'), 50);
-            
-            // Эстетичное конфетти
-            confetti({
-                particleCount: 50, spread: 50, origin: { y: 0.7 },
-                colors: ['#d4a373', '#ffffff', '#faedcd'], scalar: 0.7, gravity: 0.6
-            });
-        }
-
-        function closeOverlay() {
-            const overlay = document.getElementById('overlay');
-            overlay.classList.remove('active');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                document.getElementById('draw-btn').disabled = false;
-                document.getElementById('draw-btn').style.opacity = '1';
-                // Сбрасываем бумажки в кучу для нового розыгрыша
-                papers.forEach(p => {
-                    p.x = Math.random() * 250 + 20;
-                    p.y = Math.random() * 280 + 90;
-                });
-                update();
-            }, 500);
+        function closeScreen() {
+            location.reload(); // Сброс для нового шанса
         }
 
         init();
