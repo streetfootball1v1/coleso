@@ -3,207 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Lotto Jar</title>
+    <title>Elite 3D Lotto Sphere</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --primary: #00f2ff;
-            --accent: #ffd700;
+            --gold: #f1c40f;
+            --silver: #bdc3c7;
+            --accent: #00d2ff;
         }
-        body { 
-            background: #050505; color: white; font-family: 'Segoe UI', sans-serif;
+        body {
+            background: radial-gradient(circle at center, #1a1a2e 0%, #020205 100%);
+            color: white; font-family: 'Inter', sans-serif;
+            margin: 0; height: 100vh; overflow: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; overflow: hidden;
-        }
-        
-        /* Стеклянная колба */
-        #jar-wrapper {
-            position: relative; width: 340px; height: 450px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-radius: 150px 150px 40px 40px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 40px rgba(0, 242, 255, 0.05);
-            overflow: hidden;
-            backdrop-filter: blur(2px);
+            perspective: 1200px;
         }
 
-        /* Блик на стекле */
-        #jar-wrapper::after {
-            content: ''; position: absolute; top: 10%; left: 15%; width: 30px; height: 150px;
-            background: rgba(255,255,255,0.1); border-radius: 50%; filter: blur(10px);
+        /* 3D Сцена */
+        #scene {
+            position: relative; width: 400px; height: 400px;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-in-out;
         }
 
-        .paper {
-            position: absolute; width: 45px; height: 22px;
-            border-radius: 3px; opacity: 0.9;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-            transition: transform 0.1s linear;
+        /* Профессиональная сфера (барабан) */
+        #drum {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,210,255,0.05) 100%);
+            box-shadow: 0 0 100px rgba(0, 210, 255, 0.1), inset 0 0 50px rgba(255,255,255,0.05);
+            transform-style: preserve-3d;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* Подсветка дна */
-        #jar-bottom {
-            position: absolute; bottom: 0; width: 100%; height: 15px;
-            background: var(--primary); filter: blur(15px); opacity: 0.3;
+        /* Стеклянный блеск */
+        .glass-glare {
+            position: absolute; width: 80%; height: 80%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
         }
 
-        button {
-            margin-top: 40px; padding: 18px 60px; font-size: 20px; font-weight: bold;
-            cursor: pointer; background: transparent; color: var(--primary);
-            border: 2px solid var(--primary); border-radius: 50px; 
-            transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
+        /* Кольца барабана (металл) */
+        .ring {
+            position: absolute; border: 4px solid var(--silver);
+            border-radius: 50%; width: 102%; height: 102%;
+            opacity: 0.3; transform: rotateX(80deg);
         }
-        button:hover { background: var(--primary); color: #000; box-shadow: 0 0 30px var(--primary); }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* Окно победителя */
-        #overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-            flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+        /* Контейнер для летающих билетов */
+        #particles-container {
+            position: absolute; width: 100%; height: 100%;
+            transform-style: preserve-3d;
         }
-        
-        #winner-ticket {
-            width: 300px; padding: 40px 20px; background: white; color: #111;
-            text-align: center; font-size: 36px; font-weight: 900;
-            border-radius: 10px; border-bottom: 8px dashed #ccc;
-            transform: scale(0); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+        .ticket {
+            position: absolute; width: 30px; height: 15px;
+            background: var(--silver); opacity: 0.8;
+            border-radius: 2px; transform-style: preserve-3d;
         }
-        #overlay.active #winner-ticket { transform: scale(1) rotate(-3deg); }
+
+        .ticket.vip { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+        /* Кнопка */
+        #action-btn {
+            margin-top: 60px; padding: 20px 80px; font-size: 18px;
+            font-weight: 900; color: white; text-transform: uppercase;
+            letter-spacing: 5px; cursor: pointer;
+            background: none; border: 2px solid var(--accent);
+            border-radius: 5px; position: relative;
+            transition: 0.4s; z-index: 10;
+        }
+        #action-btn:hover {
+            background: var(--accent); color: #000;
+            box-shadow: 0 0 40px var(--accent);
+        }
+
+        /* Результат */
+        #modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        #winner-card {
+            background: linear-gradient(135deg, #fff 0%, #ddd 100%);
+            color: #000; padding: 60px; border-radius: 2px;
+            text-align: center; transform: rotateY(90deg);
+            transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 0 100px rgba(255,255,255,0.2);
+        }
+        #modal.active #winner-card { transform: rotateY(0deg); }
     </style>
 </head>
 <body>
 
-    <h2 style="letter-spacing: 4px; color: rgba(255,255,255,0.5)">AIR LOTTO</h2>
-
-    <div id="jar-wrapper">
-        <div id="jar-bottom"></div>
+    <div id="scene">
+        <div id="drum">
+            <div class="glass-glare"></div>
+            <div class="ring" style="transform: rotateY(90deg)"></div>
+            <div class="ring" style="transform: rotateX(90deg)"></div>
+            <div id="particles-container"></div>
         </div>
+    </div>
 
-    <button id="drawBtn" onclick="startDraw()">КРУТИТЬ БАРАБАН</button>
+    <button id="action-btn" onclick="runLottery()">Launch Draw</button>
 
-    <div id="overlay" onclick="closeOverlay()">
-        <p style="color: var(--primary); margin-bottom: 20px;">СЧАСТЛИВЫЙ БИЛЕТ:</p>
-        <div id="winner-ticket">ИМЯ</div>
-        <p style="margin-top: 40px; font-size: 12px; color: #555;">Кликни, чтобы продолжить</p>
+    <div id="modal" onclick="closeModal()">
+        <h2 style="color: var(--accent); font-weight: 200; letter-spacing: 10px;">WINNER</h2>
+        <div id="winner-card">
+            <div style="font-size: 14px; color: #888; margin-bottom: 10px;">OFFICIAL TICKET</div>
+            <h1 id="winner-name" style="font-size: 48px; margin: 0;">NAME</h1>
+        </div>
+        <p style="margin-top: 40px; color: #444; font-size: 12px;">CLICK TO EXIT</p>
     </div>
 
     <script>
-        const container = document.getElementById('jar-wrapper');
+        const container = document.getElementById('particles-container');
         const params = new URLSearchParams(window.location.search);
+        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
-        // Реальные имена из базы
-        const realNames = (params.get('names') || "Мария,Алексей,Елена").split(',');
-        
-        // Настройки количества бумажек
-        const TOTAL_PAPERS = 100; // Всего бумажек в банке
-        let papers = [];
+        const tickets = [];
+        const TICKET_COUNT = 120;
 
-        function initJar() {
-            for (let i = 0; i < TOTAL_PAPERS; i++) {
-                const el = document.createElement('div');
-                el.className = 'paper';
+        // Инициализация 3D частиц
+        function init() {
+            for (let i = 0; i < TICKET_COUNT; i++) {
+                const div = document.createElement('div');
+                div.className = 'ticket' + (i < realNames.length ? ' vip' : '');
                 
-                // Если i меньше количества реальных имен, это "именная" бумажка, иначе "пустышка"
-                const isReal = i < realNames.length;
-                el.dataset.name = isReal ? realNames[i] : "пустышка";
-                
-                // Цвета: именные — золотистые/голубые, пустышки — белые/серые
-                el.style.background = isReal ? 'linear-gradient(45deg, #00f2ff, #0066ff)' : 'linear-gradient(45deg, #eee, #bbb)';
-                
-                const p = {
-                    el,
-                    x: Math.random() * 280 + 20,
-                    y: Math.random() * 300 + 100,
-                    r: Math.random() * 360,
-                    vx: 0, vy: 0, vr: 0
+                const ticket = {
+                    el: div,
+                    x: (Math.random() - 0.5) * 300,
+                    y: (Math.random() - 0.5) * 300,
+                    z: (Math.random() - 0.5) * 300,
+                    rx: Math.random() * 360,
+                    ry: Math.random() * 360,
+                    vx: 0, vy: 0, vz: 0
                 };
                 
-                container.appendChild(el);
-                papers.push(p);
+                container.appendChild(div);
+                tickets.push(ticket);
             }
-            updatePhysics();
+            render();
         }
 
-        function updatePhysics() {
-            papers.forEach(p => {
-                p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg)`;
+        function render() {
+            tickets.forEach(t => {
+                t.el.style.transform = `translate3d(${t.x}px, ${t.y}px, ${t.z}px) rotateX(${t.rx}deg) rotateY(${t.ry}deg)`;
             });
         }
 
-        function startDraw() {
-            const btn = document.getElementById('drawBtn');
+        function runLottery() {
+            const btn = document.getElementById('action-btn');
+            btn.style.opacity = '0';
             btn.disabled = true;
-            
-            let start = performance.now();
-            const duration = 4000;
 
-            function mix(now) {
+            let start = performance.now();
+            const duration = 5000;
+
+            function animate(now) {
                 const elapsed = now - start;
                 const progress = elapsed / duration;
+                const scene = document.getElementById('scene');
 
                 if (progress < 1) {
-                    papers.forEach((p, i) => {
-                        // Вихревое движение
-                        const centerX = 150;
-                        const centerY = 200;
-                        const angle = Math.atan2(p.y - centerY, p.x - centerX);
-                        const dist = Math.sqrt((p.y - centerY)**2 + (p.x - centerX)**2);
-                        
-                        // Сила "ветра" зависит от времени (сначала разгон, потом затухание)
-                        const power = Math.sin(progress * Math.PI) * 25;
-                        
-                        p.vx += Math.cos(angle + 1.5) * power * Math.random();
-                        p.vy += Math.sin(angle + 1.5) * power * Math.random();
-                        
-                        // Трение
-                        p.vx *= 0.92;
-                        p.vy *= 0.92;
-                        
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.r += (p.vx + p.vy) * 2;
-
-                        // Отскоки от стенок колбы
-                        if (p.x < 10 || p.x > 280) p.vx *= -1;
-                        if (p.y < 50 || p.y > 400) p.vy *= -1;
-                    });
+                    // Вращение всей сцены
+                    scene.style.transform = `rotateY(${progress * 1000}deg) rotateX(${Math.sin(progress * 5) * 20}deg)`;
                     
-                    updatePhysics();
-                    requestAnimationFrame(mix);
+                    tickets.forEach(t => {
+                        const speed = Math.sin(progress * Math.PI) * 40;
+                        t.x += (Math.random() - 0.5) * speed;
+                        t.y += (Math.random() - 0.5) * speed;
+                        t.z += (Math.random() - 0.5) * speed;
+
+                        // Ограничение сферой
+                        const dist = Math.sqrt(t.x**2 + t.y**2 + t.z**2);
+                        if (dist > 180) {
+                            t.x *= 0.9; t.y *= 0.9; t.z *= 0.9;
+                        }
+                        
+                        t.rx += speed;
+                        t.ry += speed;
+                    });
+
+                    render();
+                    requestAnimationFrame(animate);
                 } else {
                     showWinner();
                 }
             }
-            requestAnimationFrame(mix);
+            requestAnimationFrame(animate);
         }
 
         function showWinner() {
-            // Выбираем случайное имя из РЕАЛЬНОГО списка
             const winner = realNames[Math.floor(Math.random() * realNames.length)];
-            const overlay = document.getElementById('overlay');
-            const ticket = document.getElementById('winner-ticket');
-            
-            ticket.innerText = winner;
-            overlay.style.display = 'flex';
-            setTimeout(() => overlay.classList.add('active'), 50);
+            document.getElementById('winner-name').innerText = winner;
+            const modal = document.getElementById('modal');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 100);
 
             confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#00f2ff', '#ffd700', '#ffffff']
+                particleCount: 200, spread: 80, origin: { y: 0.7 },
+                colors: ['#00d2ff', '#f1c40f', '#ffffff']
             });
         }
 
-        function closeOverlay() {
-            const overlay = document.getElementById('overlay');
-            overlay.classList.remove('active');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                document.getElementById('drawBtn').disabled = false;
-            }, 500);
+        function closeModal() {
+            location.reload(); // Перезагрузка для нового шанса
         }
 
-        initJar();
+        init();
     </script>
 </body>
 </html>
