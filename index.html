@@ -3,108 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Raffle</title>
+    <title>Aesthetic Raffle</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #fdfaf6;
+            --card-bg: #ffffff;
+            --accent: #d4a373; /* Приятный бежевый */
+            --text: #4a4a4a;
+        }
+
         body {
-            background: #000; color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', sans-serif;
+            margin: 0; height: 100vh;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; margin: 0;
-        }
-        
-        #stage {
-            position: relative; width: 100%; max-width: 400px; height: 300px;
-            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
         }
 
-        .floating-paper {
-            position: absolute; width: 80px; height: 40px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            animation: float 6s infinite ease-in-out;
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 400; font-size: 28px; font-style: italic;
+            margin-bottom: 40px; letter-spacing: 1px;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(10px, -20px) rotate(5deg); }
-            66% { transform: translate(-10px, 10px) rotate(-5deg); }
+        #table {
+            position: relative; width: 100%; max-width: 500px; height: 400px;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+        }
+
+        .note {
+            position: absolute; width: 90px; height: 110px;
+            background: var(--card-bg);
+            border-radius: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        /* Имитация фотокарточки */
+        .note::before {
+            content: ''; width: 70px; height: 70px;
+            background: #f0f0f0; margin-bottom: 10px; border-radius: 1px;
         }
 
         #draw-btn {
-            background: #fff; color: #000; border: none;
-            padding: 20px 40px; font-size: 14px; font-weight: 600;
+            margin-top: 50px; padding: 15px 45px;
+            font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 400;
             letter-spacing: 2px; text-transform: uppercase;
-            cursor: pointer; border-radius: 100px; transition: 0.4s;
-            margin-top: 50px;
+            background-color: var(--accent); color: white;
+            border: none; border-radius: 40px; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(212, 163, 115, 0.2);
+            transition: 0.3s;
         }
-        #draw-btn:hover { transform: scale(1.05); background: #f0f0f0; }
-        #draw-btn:disabled { opacity: 0.2; }
+        #draw-btn:hover { background-color: #bc8a5f; transform: translateY(-2px); }
 
-        #result {
-            display: none; position: fixed; inset: 0; background: #000;
+        /* Окно финала */
+        #result-screen {
+            display: none; position: fixed; inset: 0;
+            background: rgba(253, 250, 246, 0.98);
             z-index: 100; flex-direction: column; align-items: center; justify-content: center;
+            animation: fadeIn 0.8s ease;
         }
 
-        .winner-label { color: #888; font-size: 12px; letter-spacing: 4px; margin-bottom: 20px; }
-        .winner-name { font-size: 42px; font-weight: 200; border-bottom: 1px solid #333; padding-bottom: 20px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .winner-card {
+            width: 240px; height: 300px; background: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; text-align: center; border-radius: 3px;
+        }
+
+        .winner-photo {
+            width: 200px; height: 200px; background: var(--bg);
+            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .winner-name {
+            font-family: 'Playfair Display', serif; font-size: 26px; color: var(--text);
+        }
     </style>
 </head>
 <body>
 
-    <div id="stage">
+    <h2>The Giveaway Collection</h2>
+
+    <div id="table">
         </div>
 
-    <button id="draw-btn" onclick="start()">Начать выбор</button>
+    <button id="draw-btn" onclick="startSelection()">Pick a winner</button>
 
-    <div id="result" onclick="reset()">
-        <div class="winner-label">ПОБЕДИТЕЛЬ</div>
-        <div id="winner-display" class="winner-name">ИМЯ</div>
-        <p style="color: #444; margin-top: 50px; font-size: 11px;">КЛИКНИТЕ ДЛЯ ВОЗВРАТА</p>
+    <div id="result-screen" onclick="location.reload()">
+        <p style="letter-spacing: 3px; font-size: 12px; margin-bottom: 30px; opacity: 0.6;">CONGRATULATIONS</p>
+        <div class="winner-card">
+            <div class="winner-photo">✨</div>
+            <div id="winner-name" class="winner-name">Name</div>
+        </div>
+        <p style="margin-top: 50px; font-size: 10px; letter-spacing: 2px; opacity: 0.4;">TOUCH TO RESET</p>
     </div>
 
     <script>
-        const stage = document.getElementById('stage');
+        const table = document.getElementById('table');
         const params = new URLSearchParams(window.location.search);
-        const names = (params.get('names') || "Анна,Марк,Елена,Иван,Сара").split(',');
+        const names = (params.get('names') || "Anna,Mark,Elena,John,Sarah,Olga,Daria,Ivan").split(',');
 
         function init() {
-            // Создаем 40 декоративных бумажек
-            for (let i = 0; i < 40; i++) {
-                const p = document.createElement('div');
-                p.className = 'floating-paper';
-                p.style.left = Math.random() * 80 + 10 + '%';
-                p.style.top = Math.random() * 80 + 10 + '%';
-                p.style.animationDelay = Math.random() * 5 + 's';
-                p.style.opacity = Math.random() * 0.5;
-                stage.appendChild(p);
+            // Создаем 30 карточек (реальные + пустышки)
+            for (let i = 0; i < 30; i++) {
+                const note = document.createElement('div');
+                note.className = 'note';
+                
+                // Случайное положение и легкий поворот
+                const x = (Math.random() - 0.5) * 350;
+                const y = (Math.random() - 0.5) * 300;
+                const r = (Math.random() - 0.5) * 40;
+                
+                note.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
+                note.style.zIndex = Math.floor(Math.random() * 10);
+                
+                table.appendChild(note);
             }
         }
 
-        function start() {
-            document.getElementById('draw-btn').disabled = true;
+        function startSelection() {
+            const btn = document.getElementById('draw-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+
+            const notes = document.querySelectorAll('.note');
             
-            // Плавное исчезновение всех бумажек
-            const papers = document.querySelectorAll('.floating-paper');
-            papers.forEach(p => p.style.transition = '2s');
-            papers.forEach(p => p.style.opacity = '0');
+            // Эффект "перемешивания" — карточки плавно меняют местами
+            notes.forEach(note => {
+                const x = (Math.random() - 0.5) * 100;
+                const y = (Math.random() - 0.5) * 100;
+                note.style.transform += ` translate(${x}px, ${y}px)`;
+            });
 
             setTimeout(() => {
                 const winner = names[Math.floor(Math.random() * names.length)];
-                document.getElementById('winner-display').innerText = winner;
-                document.getElementById('result').style.display = 'flex';
+                document.getElementById('winner-name').innerText = winner;
+                document.getElementById('result-screen').style.display = 'flex';
                 
+                // Эстетичное конфетти (только золотистые и белые)
                 confetti({
-                    particleCount: 50, spread: 60, colors: ['#ffffff'],
-                    origin: { y: 0.8 }, scalar: 0.7
+                    particleCount: 40, spread: 50, origin: { y: 0.7 },
+                    colors: ['#d4a373', '#ffffff', '#faedcd'],
+                    scalar: 0.8, gravity: 0.5
                 });
-            }, 2500);
-        }
-
-        function reset() {
-            location.reload();
+            }, 2000);
         }
 
         init();
