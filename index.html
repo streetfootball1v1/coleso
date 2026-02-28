@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aesthetic Raffle</title>
+    <title>Aesthetic Lotto Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #fdfaf6;
-            --card-bg: #ffffff;
-            --accent: #d4a373; /* Приятный бежевый */
-            --text: #4a4a4a;
+            --bg: #f9f6f2;
+            --glass: rgba(255, 255, 255, 0.4);
+            --gold: #d4a373;
+            --text: #5e5e5e;
         }
 
         body {
@@ -25,136 +25,160 @@
 
         h2 {
             font-family: 'Playfair Display', serif;
-            font-weight: 400; font-size: 28px; font-style: italic;
-            margin-bottom: 40px; letter-spacing: 1px;
+            font-size: 32px; font-style: italic; font-weight: 400;
+            margin-bottom: 30px; letter-spacing: 1px;
         }
 
-        #table {
-            position: relative; width: 100%; max-width: 500px; height: 400px;
-            display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+        /* Эстетичная Колба */
+        #jar-container {
+            position: relative; width: 320px; height: 420px;
+            background: var(--glass);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 120px 120px 40px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05), inset 0 0 20px rgba(255,255,255,0.5);
+            backdrop-filter: blur(5px);
+            overflow: hidden;
         }
 
-        .note {
-            position: absolute; width: 90px; height: 110px;
-            background: var(--card-bg);
+        /* Золотая каемка сверху */
+        #jar-container::before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 8px; background: var(--gold); border-radius: 0 0 10px 10px;
+            opacity: 0.6;
+        }
+
+        .paper {
+            position: absolute; width: 40px; height: 20px;
             border-radius: 2px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-
-        /* Имитация фотокарточки */
-        .note::before {
-            content: ''; width: 70px; height: 70px;
-            background: #f0f0f0; margin-bottom: 10px; border-radius: 1px;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.05);
+            transition: transform 0.1s linear;
         }
 
         #draw-btn {
-            margin-top: 50px; padding: 15px 45px;
-            font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 400;
-            letter-spacing: 2px; text-transform: uppercase;
-            background-color: var(--accent); color: white;
-            border: none; border-radius: 40px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(212, 163, 115, 0.2);
+            margin-top: 40px; padding: 18px 50px;
+            font-size: 13px; font-weight: 500; letter-spacing: 2px;
+            text-transform: uppercase; border: none;
+            background: white; color: var(--gold);
+            border-radius: 40px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             transition: 0.3s;
         }
-        #draw-btn:hover { background-color: #bc8a5f; transform: translateY(-2px); }
+        #draw-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 
-        /* Окно финала */
-        #result-screen {
+        /* Экран победителя */
+        #overlay {
             display: none; position: fixed; inset: 0;
-            background: rgba(253, 250, 246, 0.98);
+            background: rgba(249, 246, 242, 0.98);
             z-index: 100; flex-direction: column; align-items: center; justify-content: center;
             animation: fadeIn 0.8s ease;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .winner-card {
-            width: 240px; height: 300px; background: white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px; text-align: center; border-radius: 3px;
-        }
-
-        .winner-photo {
-            width: 200px; height: 200px; background: var(--bg);
-            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
+        .winner-paper {
+            background: white; padding: 40px 60px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+            border-radius: 2px; text-align: center;
+            border: 1px solid #f0f0f0;
+            transform: rotate(-2deg);
         }
 
         .winner-name {
-            font-family: 'Playfair Display', serif; font-size: 26px; color: var(--text);
+            font-family: 'Playfair Display', serif; font-size: 34px; color: var(--gold); margin: 0;
         }
     </style>
 </head>
 <body>
 
-    <h2>The Giveaway Collection</h2>
+    <h2>The Lucky Draw</h2>
 
-    <div id="table">
+    <div id="jar-container">
         </div>
 
-    <button id="draw-btn" onclick="startSelection()">Pick a winner</button>
+    <button id="draw-btn" onclick="startSelection()">Начать розыгрыш</button>
 
-    <div id="result-screen" onclick="location.reload()">
-        <p style="letter-spacing: 3px; font-size: 12px; margin-bottom: 30px; opacity: 0.6;">CONGRATULATIONS</p>
-        <div class="winner-card">
-            <div class="winner-photo">✨</div>
-            <div id="winner-name" class="winner-name">Name</div>
+    <div id="overlay" onclick="location.reload()">
+        <p style="letter-spacing: 3px; font-size: 11px; margin-bottom: 20px; opacity: 0.5;">AND THE WINNER IS...</p>
+        <div class="winner-paper">
+            <h1 id="winner-name" class="winner-name">Name</h1>
         </div>
-        <p style="margin-top: 50px; font-size: 10px; letter-spacing: 2px; opacity: 0.4;">TOUCH TO RESET</p>
+        <p style="margin-top: 50px; font-size: 10px; opacity: 0.3; letter-spacing: 1px;">TOUCH TO RESTART</p>
     </div>
 
     <script>
-        const table = document.getElementById('table');
+        const container = document.getElementById('jar-container');
         const params = new URLSearchParams(window.location.search);
-        const names = (params.get('names') || "Anna,Mark,Elena,John,Sarah,Olga,Daria,Ivan").split(',');
+        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
+        
+        const paperColors = ['#faedcd', '#f1e3d3', '#e9edc9', '#fefae0', '#faedcd'];
+        const papers = [];
+        const TOTAL_PAPERS = 80;
 
         function init() {
-            // Создаем 30 карточек (реальные + пустышки)
-            for (let i = 0; i < 30; i++) {
-                const note = document.createElement('div');
-                note.className = 'note';
+            for (let i = 0; i < TOTAL_PAPERS; i++) {
+                const el = document.createElement('div');
+                el.className = 'paper';
+                el.style.backgroundColor = paperColors[i % paperColors.length];
                 
-                // Случайное положение и легкий поворот
-                const x = (Math.random() - 0.5) * 350;
-                const y = (Math.random() - 0.5) * 300;
-                const r = (Math.random() - 0.5) * 40;
+                const p = {
+                    el,
+                    x: Math.random() * 260 + 20,
+                    y: Math.random() * 300 + 80,
+                    r: Math.random() * 360,
+                    vx: 0, vy: 0
+                };
                 
-                note.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
-                note.style.zIndex = Math.floor(Math.random() * 10);
-                
-                table.appendChild(note);
+                container.appendChild(el);
+                papers.push(p);
             }
+            update();
+        }
+
+        function update() {
+            papers.forEach(p => {
+                p.el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.r}deg)`;
+            });
         }
 
         function startSelection() {
             const btn = document.getElementById('draw-btn');
-            btn.disabled = true;
-            btn.style.opacity = '0.3';
+            btn.disabled = true; btn.style.opacity = '0.5';
 
-            const notes = document.querySelectorAll('.note');
-            
-            // Эффект "перемешивания" — карточки плавно меняют местами
-            notes.forEach(note => {
-                const x = (Math.random() - 0.5) * 100;
-                const y = (Math.random() - 0.5) * 100;
-                note.style.transform += ` translate(${x}px, ${y}px)`;
-            });
+            let start = performance.now();
+            const duration = 3500;
 
-            setTimeout(() => {
-                const winner = names[Math.floor(Math.random() * names.length)];
-                document.getElementById('winner-name').innerText = winner;
-                document.getElementById('result-screen').style.display = 'flex';
-                
-                // Эстетичное конфетти (только золотистые и белые)
-                confetti({
-                    particleCount: 40, spread: 50, origin: { y: 0.7 },
-                    colors: ['#d4a373', '#ffffff', '#faedcd'],
-                    scalar: 0.8, gravity: 0.5
-                });
-            }, 2000);
+            function animate(now) {
+                const elapsed = now - start;
+                const progress = elapsed / duration;
+
+                if (progress < 1) {
+                    papers.forEach(p => {
+                        // Плавный вихрь
+                        const power = Math.sin(progress * Math.PI) * 15;
+                        p.vx += (Math.random() - 0.5) * power;
+                        p.vy += (Math.random() - 0.5) * power;
+                        
+                        p.vx *= 0.95; p.vy *= 0.95;
+                        p.x += p.vx; p.y += p.vy;
+                        p.r += p.vx * 2;
+
+                        if (p.x < 10 || p.x > 270) p.vx *= -1.2;
+                        if (p.y < 40 || p.y > 380) p.vy *= -1.2;
+                    });
+                    update();
+                    requestAnimationFrame(animate);
+                } else {
+                    const winner = realNames[Math.floor(Math.random() * realNames.length)];
+                    document.getElementById('winner-name').innerText = winner;
+                    document.getElementById('overlay').style.display = 'flex';
+                    
+                    confetti({
+                        particleCount: 60, spread: 50, origin: { y: 0.7 },
+                        colors: ['#d4a373', '#ffffff'], scalar: 0.7
+                    });
+                }
+            }
+            requestAnimationFrame(animate);
         }
 
         init();
