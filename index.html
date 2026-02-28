@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aesthetic Slow Raffle</title>
+    <title>Aesthetic Raffle - Live Table</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500;600&display=swap" rel="stylesheet">
     <style>
         :root { --bg: #fdfaf6; --gold: #c69363; }
         body { background-color: var(--bg); color: #444; font-family: 'Montserrat', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; -webkit-font-smoothing: antialiased; }
-        h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-style: italic; margin-bottom: 30px; font-weight: 400; letter-spacing: 1px; opacity: 0.8; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 24px; font-style: italic; margin-bottom: 30px; font-weight: 400; letter-spacing: 1px; opacity: 0.8; text-align: center; }
         
         #jar-wrapper {
             position: relative; width: 310px; height: 440px;
@@ -29,6 +29,7 @@
             transition: 0.4s; -webkit-tap-highlight-color: transparent;
         }
         #draw-btn:active { transform: scale(0.96); }
+        #draw-btn:disabled { opacity: 0.5; cursor: wait; }
 
         #result-screen { display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.99); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
         .winner-card { background: white; padding: 50px 70px; text-align: center; border-radius: 2px; box-shadow: 0 30px 70px rgba(0,0,0,0.07); transform: scale(0.8) rotate(-1deg); opacity: 0; transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -44,21 +45,24 @@
         <div id="notes-container"></div>
     </div>
 
-    <button id="draw-btn" onclick="startSelection()">Выбрать победителя</button>
+    <button id="draw-btn" onclick="startSelection()" disabled>Загрузка имен...</button>
 
     <div id="result-screen" onclick="location.reload()">
         <p style="letter-spacing: 5px; font-size: 10px; margin-bottom: 25px; opacity: 0.4;">ПОБЕДИТЕЛЬ</p>
         <div class="winner-card">
             <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p style="margin-top: 60px; font-size: 9px; opacity: 0.3; letter-spacing: 2px;">ЗАНОВО</p>
+        <p style="margin-top: 60px; font-size: 9px; opacity: 0.3; letter-spacing: 2px;">НАЖМИТЕ, ЧТОБЫ ЗАКРЫТЬ</p>
     </div>
 
     <script>
         const container = document.getElementById('notes-container');
-        const params = new URLSearchParams(window.location.search);
-        const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
+        const btn = document.getElementById('draw-btn');
+        let realNames = [];
         
+        // Твоя ссылка на CSV из Google Таблиц
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfncyX9jUFc-1eQbMzLPBs2cDlu1rO5B4dCAHkjRnCWZwBBP4Ev5aclkixP1NOfPNvb6hdfwrdZ4YZ/pub?output=csv';
+
         const papers = [];
         const TOTAL_ENVELOPES = 40; 
 
@@ -76,7 +80,27 @@
                 </defs>
             </svg>`;
 
+        async function loadNames() {
+            try {
+                // Добавляем timestamp, чтобы браузер не кешировал старые данные из таблицы
+                const response = await fetch(SHEET_CSV_URL + '&cache=' + new Date().getTime());
+                const data = await response.text();
+                realNames = data.split(/\r?\n/).map(name => name.trim()).filter(name => name.length > 0);
+                
+                if (realNames.length > 0) {
+                    btn.innerText = "Выбрать победителя";
+                    btn.disabled = false;
+                } else {
+                    btn.innerText = "Таблица пуста";
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки:", e);
+                btn.innerText = "Ошибка доступа";
+            }
+        }
+
         function init() {
+            loadNames();
             const tints = ['#ffffff', '#faf6ed', '#fefdfb', '#f7f1e3'];
             for (let i = 0; i < TOTAL_ENVELOPES; i++) {
                 const div = document.createElement('div');
@@ -96,26 +120,23 @@
         }
 
         function startSelection() {
-            const btn = document.getElementById('draw-btn');
+            if (realNames.length === 0) return;
             btn.disabled = true; btn.style.opacity = '0.3';
             let start = performance.now();
-            const duration = 8000; // Теперь 8 секунд чистого наслаждения
+            const duration = 8000; 
 
             function animate(now) {
                 const elapsed = now - start;
                 const progress = elapsed / duration;
 
                 if (progress < 1) {
-                    // Более мягкий разгон и очень долгое затухание
                     const power = Math.sin(progress * Math.PI) * 9; 
-                    
                     papers.forEach(p => {
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
-                        p.vx *= 0.97; p.vy *= 0.97; // Повышенная вязкость
+                        p.vx *= 0.97; p.vy *= 0.97;
                         p.x += p.vx; p.y += p.vy;
                         p.r += p.vx * 1.1; p.ry += p.vx * 2;
-
                         if (p.x < 5 || p.x > 245) { p.vx *= -0.6; p.x = p.x < 5 ? 5 : 245; }
                         if (p.y < 45 || p.y > 380) { p.vy *= -0.6; p.y = p.y < 45 ? 45 : 380; }
                     });
