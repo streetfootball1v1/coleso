@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realistic Paper Jar</title>
+    <title>Aesthetic Paper Jar</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Montserrat:wght@300;500&display=swap" rel="stylesheet">
     <style>
@@ -18,84 +18,79 @@
             background-color: var(--bg); color: var(--text);
             font-family: 'Montserrat', sans-serif; margin: 0; height: 100vh;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow: hidden;
+            overflow: hidden; perspective: 1000px;
         }
 
-        h2 { font-family: 'Playfair Display', serif; font-size: 30px; font-style: italic; font-weight: 400; margin-bottom: 25px; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 30px; font-style: italic; font-weight: 400; margin-bottom: 25px; letter-spacing: 1px; }
 
+        /* Стеклянная колба */
         #jar-wrapper {
-            position: relative; width: 320px; height: 430px;
-            background: var(--glass); border: 2px solid rgba(255, 255, 255, 0.7);
-            border-radius: 120px 120px 40px 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03), inset 0 0 30px rgba(255,255,255,0.4);
-            backdrop-filter: blur(5px); overflow: hidden;
-            transform-style: preserve-3d;
+            position: relative; width: 320px; height: 440px;
+            background: var(--glass); border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 120px 120px 45px 45px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.02), inset 0 0 40px rgba(255,255,255,0.5);
+            backdrop-filter: blur(8px); overflow: hidden; transform-style: preserve-3d;
         }
 
-        /* Золотая каемка сверху */
+        /* Золотое кольцо сверху */
         #jar-wrapper::before {
             content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-            width: 90px; height: 5px; background: var(--gold); border-radius: 0 0 10px 10px; opacity: 0.5;
+            width: 100px; height: 4px; background: var(--gold); border-radius: 0 0 10px 10px; opacity: 0.4;
         }
 
-        .paper-note {
-            position: absolute; width: 40px; height: 40px; /* Размер картинки */
-            /* ПНГ-изображение скрученной бумажки (Base64) */
-            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAAAtSURBVFhH7cExAQAAAMKg9U9tCY+eAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4G99jAABh22LdAAAAABJRU5ErkJggg==");
-            background-size: contain; background-repeat: no-repeat; background-position: center;
-            opacity: 0.9; transform-style: preserve-3d;
+        /* Стилизация бумажки */
+        .paper {
+            position: absolute; width: 50px; height: 22px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='22' viewBox='0 0 50 22'%3E%3Crect width='50' height='22' fill='%23fff' rx='2'/%3E%3Cpath d='M0 11h50' stroke='rgba(0,0,0,0.05)' stroke-width='1'/%3E%3Cpath d='M10 0v22M20 0v22M30 0v22M40 0v22' stroke='rgba(0,0,0,0.03)' stroke-width='0.5'/%3E%3Clinear-gradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='rgba(0,0,0,0.1)'/%3E%3Cstop offset='50%25' stop-color='rgba(255,255,255,0)'/%3E%3Cstop offset='100%25' stop-color='rgba(0,0,0,0.05)'/%3E%3C/linear-gradient%3E%3Crect width='50' height='22' fill='url(%23g)'/%3E%3C/svg%3E");
+            background-size: contain; background-repeat: no-repeat;
+            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.08));
             will-change: transform;
         }
 
-        /* Спецэффект: разные оттенки бумаги */
-        .paper-note:nth-child(2n) { filter: hue-rotate(10deg); }
-        .paper-note:nth-child(3n) { filter: brightness(0.9) hue-rotate(-10deg); }
-
         #draw-btn {
-            margin-top: 40px; padding: 18px 55px;
-            font-size: 13px; font-weight: 500; letter-spacing: 2px;
+            margin-top: 50px; padding: 18px 60px;
+            font-size: 12px; font-weight: 500; letter-spacing: 3px;
             text-transform: uppercase; border: none;
             background: white; color: var(--gold);
-            border-radius: 40px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: 0.3s;
+            border-radius: 50px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: 0.4s;
         }
-        #draw-btn:hover { background: #bc8a5f; color: white; transform: translateY(-1px); }
-        #draw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        #draw-btn:hover { background: var(--gold); color: white; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(212, 163, 115, 0.3); }
 
-        /* Окно победителя */
+        /* Модальное окно */
         #result-screen {
-            display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.98);
+            display: none; position: fixed; inset: 0; background: rgba(253, 250, 246, 0.99);
             z-index: 1000; flex-direction: column; align-items: center; justify-content: center;
-            animation: fadeIn 0.8s ease;
+            animation: fadeIn 0.6s ease;
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .ticket-box {
-            background: white; padding: 35px 50px; text-align: center;
+        .winner-card {
+            background: white; padding: 50px 70px; text-align: center;
             border-radius: 2px; border: 1px solid #f2f2f2;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-            transform: scale(0); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+            transform: scale(0.8) rotate(-2deg); opacity: 0; transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #result-screen.active .ticket-box { transform: scale(1); }
-        .w-name { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--gold); margin: 0; font-weight: 400; }
+        #result-screen.active .winner-card { transform: scale(1) rotate(-2deg); opacity: 1; }
+        .w-name { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--gold); margin: 0; font-weight: 400; }
     </style>
 </head>
 <body>
 
-    <h2>Gold Collection</h2>
+    <h2>The Lucky Selection</h2>
 
     <div id="jar-wrapper">
         <div id="notes-container"></div>
     </div>
 
-    <button id="draw-btn" onclick="startSelection()">Pick the Winner</button>
+    <button id="draw-btn" onclick="startSelection()">Pick a Ticket</button>
 
-    <div id="result-screen" onclick="closeScreen()">
-        <p style="letter-spacing: 3px; font-size: 11px; margin-bottom: 25px; opacity: 0.5;">CONGRATULATIONS</p>
-        <div class="ticket-box">
+    <div id="result-screen" onclick="location.reload()">
+        <p style="letter-spacing: 5px; font-size: 11px; margin-bottom: 30px; opacity: 0.4; font-weight: 500;">CONGRATULATIONS</p>
+        <div class="winner-card">
             <h1 id="winner-name" class="w-name">...</h1>
         </div>
-        <p style="margin-top: 60px; font-size: 10px; opacity: 0.3;">TOUCH TO EXIT</p>
+        <p style="margin-top: 70px; font-size: 10px; opacity: 0.3; letter-spacing: 2px;">TOUCH ANYWHERE TO RESTART</p>
     </div>
 
     <script>
@@ -104,19 +99,23 @@
         const realNames = (params.get('names') || "Anna,Mark,Helen,John,Sarah").split(',');
         
         const papers = [];
-        const TOTAL_NOTES = 70; // 70 летящих билетиков
+        const TOTAL_NOTES = 60; 
 
         function init() {
             for (let i = 0; i < TOTAL_NOTES; i++) {
                 const div = document.createElement('div');
-                div.className = 'paper-note';
+                div.className = 'paper';
+                
+                // Легкий оттенок для разных бумажек
+                const hues = [0, 10, -5, 5];
+                div.style.filter += ` hue-rotate(${hues[i % 4]}deg) brightness(${0.95 + Math.random()*0.1})`;
                 
                 const p = {
                     el: div,
-                    x: Math.random() * 260 + 20,
+                    x: Math.random() * 250 + 20,
                     y: Math.random() * 300 + 80,
                     r: Math.random() * 360,
-                    ry: Math.random() * 360, // 3D вращение
+                    ry: Math.random() * 360,
                     vx: 0, vy: 0
                 };
                 
@@ -134,7 +133,7 @@
 
         function startSelection() {
             const btn = document.getElementById('draw-btn');
-            btn.disabled = true; btn.style.opacity = '0.4';
+            btn.disabled = true; btn.style.opacity = '0.3';
 
             let start = performance.now();
             const duration = 4000;
@@ -145,18 +144,17 @@
 
                 if (progress < 1) {
                     papers.forEach(p => {
-                        const power = Math.sin(progress * Math.PI) * 15;
+                        const power = Math.sin(progress * Math.PI) * 20;
                         p.vx += (Math.random() - 0.5) * power;
                         p.vy += (Math.random() - 0.5) * power;
                         
-                        p.vx *= 0.95; p.vy *= 0.95;
+                        p.vx *= 0.94; p.vy *= 0.94;
                         p.x += p.vx; p.y += p.vy;
-                        p.r += p.vx * 2;
-                        p.ry += p.vx * 3;
+                        p.r += p.vx * 3;
+                        p.ry += p.vx * 5;
 
-                        // Стенки
-                        if (p.x < 15 || p.x > 265) p.vx *= -1.2;
-                        if (p.y < 40 || p.y > 385) p.vy *= -1.2;
+                        if (p.x < 15 || p.x > 255) p.vx *= -1.2;
+                        if (p.y < 50 || p.y > 390) p.vy *= -1.2;
                     });
                     update();
                     requestAnimationFrame(animate);
@@ -165,18 +163,15 @@
                     document.getElementById('winner-name').innerText = winner;
                     const screen = document.getElementById('result-screen');
                     screen.style.display = 'flex';
-                    setTimeout(() => screen.classList.add('active'), 100);
+                    setTimeout(() => screen.classList.add('active'), 50);
                     
                     confetti({
-                        particleCount: 50, spread: 60, colors: ['#d4a373', '#ffffff', '#faedcd'], origin: { y: 0.7 }, scalar: 0.7, gravity: 0.6
+                        particleCount: 80, spread: 70, origin: { y: 0.75 },
+                        colors: ['#d4a373', '#ffffff'], scalar: 0.8, gravity: 0.7
                     });
                 }
             }
             requestAnimationFrame(animate);
-        }
-
-        function closeScreen() {
-            location.reload(); // Сброс для нового шанса
         }
 
         init();
